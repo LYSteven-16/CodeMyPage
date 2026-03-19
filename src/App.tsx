@@ -41,7 +41,6 @@ function App() {
   const generateId = () => `widget-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   const handleAddComponent = (item: ComponentPanelItem) => {
-    if (item.type === 'container') return;
     
     const newComponent: WidgetProps = {
       id: generateId(),

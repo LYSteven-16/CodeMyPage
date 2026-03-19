@@ -23,13 +23,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
     type: 'button',
     label: '按钮',
     icon: 'Square',
-    defaultProps: { buttonText: '点击这里', link: '#', bgColor: '#3b82f6', textColor: '#ffffff', borderRadius: 8, height: 48 }
-  },
-  {
-    type: 'container',
-    label: '容器',
-    icon: 'Square',
-    defaultProps: { width: 300, height: 200 }
+    defaultProps: { buttonText: '点击这里', bgColor: '#3b82f6', textColor: '#ffffff', borderRadius: 8, height: 48 }
   },
   {
     type: 'card',

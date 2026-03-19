@@ -5,7 +5,6 @@ export type WidgetType =
   | 'image'
   | 'button'
   | 'card'
-  | 'container'
   | 'accordion'
   | 'quiz';
 
@@ -19,9 +18,6 @@ export interface WidgetProps {
   // 位置（自由拖拽）
   x?: number;
   y?: number;
-  
-  // 容器子组件
-  children?: WidgetProps[];
   
   // 大小
   width?: number;
@@ -45,10 +41,8 @@ export interface WidgetProps {
   
   // 按钮
   buttonText?: string;
-  link?: string;
   bgColor?: string;
   textColor?: string;
-  openNewTab?: boolean;
   
   // 卡片
   title?: string;
@@ -57,11 +51,6 @@ export interface WidgetProps {
   descColor?: string;
   imageUrl?: string;
   imageFit?: 'cover' | 'contain' | 'fill';
-  
-  // 容器
-  backgroundColor?: string;
-  padding?: number;
-  containerContent?: string;
   
   // 折叠面板
   accordionTitle?: string;
@@ -74,12 +63,6 @@ export interface WidgetProps {
   questionColor?: string;
   answer?: string;
   answerColor?: string;
-}
-
-// 编辑器状态
-export interface EditorState {
-  components: WidgetProps[];
-  selectedId: string | null;
 }
 
 // 组件面板项
