@@ -9,6 +9,7 @@ interface GridSettings {
   dotSpacing: number;
   snapToGrid: boolean;
   canvasBackground: string;
+  canvasBorderRadius: number;
   dotGridBackground: string;
 }
 
@@ -34,6 +35,7 @@ function App() {
     dotSpacing: 20,
     snapToGrid: true,
     canvasBackground: '#ffffff',
+    canvasBorderRadius: 0,
     dotGridBackground: '#f3f4f6'
   });
 
@@ -85,7 +87,7 @@ function App() {
       }
     };
 
-    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${CANVAS_MIN_HEIGHT}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
+    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${CANVAS_MIN_HEIGHT}px;border-radius:${gridSettings.canvasBorderRadius}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
     const b = new Blob([html], { type: 'text/html' });
     const u = URL.createObjectURL(b);
     const a = document.createElement('a'); a.href = u; a.download = 'my-page.html'; a.click();
@@ -309,7 +311,7 @@ function App() {
           <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-200 rounded-lg">返回编辑</button>
         </div>
         <div className="py-8 px-4 flex justify-center">
-          <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, margin: '0 auto' }}>
+          <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, borderRadius: gridSettings.canvasBorderRadius, margin: '0 auto' }}>
             {components.map(comp => {
               const width = comp.width || 300;
               const height = comp.height || 200;
@@ -376,6 +378,7 @@ function App() {
             onDelete={handleDelete} 
             gridBackground={gridBackground}
             canvasBackground={gridSettings.canvasBackground}
+            canvasBorderRadius={gridSettings.canvasBorderRadius}
             zoom={zoom}
             onDoubleClick={handleDoubleClick}
             onDragStart={handleWidgetDragStart}
@@ -464,6 +467,19 @@ function App() {
                 title="背景颜色"
               />
             </div>
+            <div className="w-px h-4 bg-gray-300" />
+            <div className="flex items-center gap-1 text-sm">
+              <span>圆角:</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="24" 
+                value={gridSettings.canvasBorderRadius}
+                onChange={(e) => handleGridChange({ canvasBorderRadius: parseInt(e.target.value) })}
+                className="w-16"
+              />
+              <span className="w-6 text-xs">{gridSettings.canvasBorderRadius}px</span>
+            </div>
           </div>
         </div>
       </div>
@@ -478,6 +494,7 @@ const WorkArea = forwardRef<HTMLDivElement, any>(({
   
   gridBackground,
   canvasBackground,
+  canvasBorderRadius = 0,
   zoom = 100,
   onDoubleClick,
   onDragStart,
@@ -506,7 +523,7 @@ const WorkArea = forwardRef<HTMLDivElement, any>(({
       <div 
         ref={canvasRef}
         className="relative mx-auto" 
-        style={{ width: CANVAS_WIDTH, minHeight: canvasHeight, backgroundColor: canvasBackground, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zoom: `${zoom}%` }}
+        style={{ width: CANVAS_WIDTH, minHeight: canvasHeight, backgroundColor: canvasBackground, borderRadius: canvasBorderRadius, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zoom: `${zoom}%` }}
       >
         {components.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-gray-400">
