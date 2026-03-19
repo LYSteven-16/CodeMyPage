@@ -74,6 +74,7 @@ export interface WidgetProps {
   buttonStyle?: 'filled' | 'outline' | 'text';
   buttonIcon?: string;
   hoverAnimation?: 'scale' | 'slide' | 'none';
+  openNewTab?: boolean;
   
   // 卡片
   cardTitle?: string;

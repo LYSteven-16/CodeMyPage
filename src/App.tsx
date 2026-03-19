@@ -1,5 +1,6 @@
 import { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
+import { ComponentEditor } from './components/Editor/ComponentEditor';
 import type { WidgetProps, ComponentPanelItem } from './types';
 import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, FileText, Move, Save, Upload } from 'lucide-react';
 
@@ -22,6 +23,7 @@ function App() {
   const [showPreview, setShowPreview] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [showGridSettings, setShowGridSettings] = useState(false);
+  const [showComponentEditor, setShowComponentEditor] = useState(false);
   const workAreaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -368,7 +370,7 @@ function App() {
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
           </div>
         </div>
-        <div className="flex-1 flex overflow-hidden">
+        <div className={`flex-1 flex overflow-hidden transition-all ${showComponentEditor ? 'mr-80' : ''}`}>
           <ComponentPanel onAdd={handleAddComponent} />
           <WorkArea 
             ref={workAreaRef}
@@ -395,31 +397,32 @@ function App() {
         </div>
 
         {selectedComponent && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border">
-              <button onClick={() => handleMoveUp(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="上移一层"><ArrowUp size={18} /></button>
-              <button onClick={() => handleMoveDown(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="下移一层"><ArrowDown size={18} /></button>
-              <div className="w-px h-6 bg-gray-200"></div>
-              <button onClick={() => handleDuplicate(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="复制"><Copy size={18} /></button>
-              <button onClick={() => handleDelete(selectedId || "")} className="p-2 hover:bg-red-50 text-red-500 rounded-full" title="删除"><Trash2 size={18} /></button>
-              <div className="w-px h-6 bg-gray-200"></div>
-              <button onClick={() => setSelectedId(null)} className="px-3 py-1 hover:bg-gray-100 rounded-full text-sm">取消选择</button>
-              {selectedComponent.type === 'card' && (
-                <>
-                  <div className="w-px h-6 bg-gray-200"></div>
-                  <select 
-                    value={selectedComponent.imageFit || 'cover'}
-                    onChange={(e) => handleUpdateProperty(selectedId || "", { imageFit: e.target.value as 'cover' | 'contain' | 'fill' })}
-                    className="border rounded-full px-2 py-1 text-sm"
-                  >
-                    <option value="cover">裁切</option>
-                    <option value="contain">完整</option>
-                    <option value="fill">拉伸</option>
-                  </select>
-                </>
-              )}
+          <>
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border">
+                <button onClick={() => handleMoveUp(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="上移一层"><ArrowUp size={18} /></button>
+                <button onClick={() => handleMoveDown(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="下移一层"><ArrowDown size={18} /></button>
+                <div className="w-px h-6 bg-gray-200"></div>
+                <button onClick={() => handleDuplicate(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="复制"><Copy size={18} /></button>
+                <button onClick={() => handleDelete(selectedId || "")} className="p-2 hover:bg-red-50 text-red-500 rounded-full" title="删除"><Trash2 size={18} /></button>
+                <div className="w-px h-6 bg-gray-200"></div>
+                <button 
+                  onClick={() => setShowComponentEditor(!showComponentEditor)} 
+                  className={`px-3 py-1 rounded-full text-sm ${showComponentEditor ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`}
+                >
+                  属性
+                </button>
+                <button onClick={() => setSelectedId(null)} className="px-3 py-1 hover:bg-gray-100 rounded-full text-sm">取消</button>
+              </div>
             </div>
-          </div>
+            {showComponentEditor && (
+              <ComponentEditor 
+                component={selectedComponent} 
+                onUpdate={(updates) => handleUpdateProperty(selectedId || "", updates)}
+                onClose={() => setShowComponentEditor(false)}
+              />
+            )}
+          </>
         )}
 
         <div className="fixed bottom-6 right-6 z-50">
