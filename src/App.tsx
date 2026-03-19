@@ -1,7 +1,7 @@
 import { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import type { WidgetProps, ComponentPanelItem } from './types';
-import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload } from 'lucide-react';
+import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Square, Move, Save, Upload } from 'lucide-react';
 
 interface GridSettings {
   dotSize: number;
@@ -428,7 +428,7 @@ function App() {
             onClick={(e) => { e.stopPropagation(); setShowGridSettings(!showGridSettings); }}
             title="画布设置"
           >
-            <Grid3X3 size={22} />
+            <Square size={22} />
           </button>
           {showGridSettings && (
             <div className="absolute bottom-full mb-2 right-0 bg-white rounded-xl shadow-lg border p-4 w-72" onClick={(e) => e.stopPropagation()}>
