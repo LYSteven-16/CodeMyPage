@@ -455,13 +455,13 @@ function App() {
               />
             </div>
             <div className="flex items-center gap-1 text-sm">
-              <span>网格:</span>
+              <span>背景:</span>
               <input 
                 type="color" 
                 value={gridSettings.dotGridBackground} 
                 onChange={(e) => handleGridChange({ dotGridBackground: e.target.value })}
                 className="w-6 h-6 rounded cursor-pointer border-0"
-                title="网格背景色"
+                title="背景颜色"
               />
             </div>
           </div>
