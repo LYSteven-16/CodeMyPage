@@ -392,28 +392,21 @@ function App() {
                   </div>
                 );
               }
-              if (comp.type === 'accordion') {
-                const [open, setOpen] = useState(false);
-                return (
-                  <div key={comp.id} data-accordion style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                    <div onClick={() => setOpen(!open)} style={{ padding: 16, backgroundColor: comp.accordionTitleColor || '#f3f4f6', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              if (comp.type === 'accordion') return (
+                  <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                    <div style={{ padding: 16, backgroundColor: comp.accordionTitleColor || '#f3f4f6', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       {comp.accordionTitle || '点击展开'}
-                      <span style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▼</span>
+                      <span>▼</span>
                     </div>
-                    <div style={{ padding: 16, color: comp.accordionContentColor || '#374151', maxHeight: open ? '200px' : '0', overflow: 'hidden', transition: 'maxHeight 0.3s' }}>{comp.accordionContent || '隐藏内容'}</div>
+                    <div style={{ padding: 16, color: comp.accordionContentColor || '#374151' }}>{comp.accordionContent || '隐藏内容'}</div>
                   </div>
                 );
-              }
-              if (comp.type === 'quiz') {
-                const [show, setShow] = useState(false);
-                return (
+              if (comp.type === 'quiz') return (
                   <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
                     <div style={{ fontWeight: 'bold', color: comp.questionColor || '#1f2937', marginBottom: 12 }}>{comp.question || '问题'}</div>
-                    {!show && <button onClick={() => setShow(true)} style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>显示答案</button>}
-                    {show && <div style={{ color: comp.answerColor || '#059669', backgroundColor: '#d1fae5', padding: 12, borderRadius: 4 }}>{comp.answer || '答案'}</div>}
+                    <div style={{ color: comp.answerColor || '#059669', backgroundColor: '#d1fae5', padding: 12, borderRadius: 4 }}>{comp.answer || '答案'}</div>
                   </div>
                 );
-              }
               // 选择题
               if (comp.type === 'choice') return (
                 <div key={comp.id} data-choice style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
