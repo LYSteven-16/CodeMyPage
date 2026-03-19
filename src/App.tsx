@@ -875,6 +875,151 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
         </div>
       );
     }
+    // 答题卡
+    if (component.type === 'answerSheet') {
+      const totalQuestions = component.totalQuestions || 10;
+      const answeredQuestions = component.answeredQuestions || [];
+      const markedQuestions = component.markedQuestions || [];
+      const questions = Array.from({ length: totalQuestions }, (_, i) => i + 1);
+      return (
+        <div style={{ width: '100%', height: '100%', padding: 16, backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'auto' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 12, color: '#1f2937' }}>答题卡</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            {questions.map((q: number) => {
+              const isAnswered = answeredQuestions.includes(q);
+              const isMarked = markedQuestions.includes(q);
+              let bgColor = '#f3f4f6', borderColor = '#d1d5db', textColor = '#6b7280';
+              if (isAnswered) {
+                bgColor = '#d1fae5';
+                borderColor = '#10b981';
+                textColor = '#065f46';
+              }
+              if (isMarked) {
+                bgColor = '#fef3c7';
+                borderColor = '#f59e0b';
+                textColor = '#92400e';
+              }
+              return (
+                <div key={q} style={{
+                  padding: '8px 12px',
+                  backgroundColor: bgColor,
+                  border: `2px solid ${borderColor}`,
+                  borderRadius: 6,
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  {q}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: '#6b7280' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 16, height: 16, backgroundColor: '#d1fae5', border: '2px solid #10b981', borderRadius: 4 }}></div>
+              <span>已答 ({answeredQuestions.length})</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 16, height: 16, backgroundColor: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 4 }}></div>
+              <span>标记 ({markedQuestions.length})</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    // 答案解析
+    if (component.type === 'answerExplanation') {
+      const difficultyColors: Record<string, { bg: string; text: string }> = {
+        easy: { bg: '#d1fae5', text: '#065f46' },
+        medium: { bg: '#fef3c7', text: '#92400e' },
+        hard: { bg: '#fee2e2', text: '#991b1b' }
+      };
+      const difficulty = difficultyColors[component.difficulty || 'medium'];
+      return (
+        <div style={{ width: '100%', height: '100%', padding: 16, backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <div style={{ fontWeight: 'bold', color: '#1f2937' }}>
+              {component.explanationTitle || '答案解析'}
+            </div>
+            <span style={{
+              padding: '4px 10px',
+              backgroundColor: difficulty.bg,
+              color: difficulty.text,
+              borderRadius: 4,
+              fontSize: 12,
+              fontWeight: 'bold'
+            }}>
+              {component.difficulty === 'easy' ? '简单' : component.difficulty === 'hard' ? '困难' : '中等'}
+            </span>
+          </div>
+          {component.relatedQuestion && (
+            <div style={{
+              padding: 10,
+              backgroundColor: '#f3f4f6',
+              borderRadius: 4,
+              marginBottom: 12,
+              fontSize: 14,
+              color: '#6b7280'
+            }}>
+              <strong>相关问题：</strong>
+              {component.relatedQuestion}
+            </div>
+          )}
+          <div style={{ color: '#374151', lineHeight: 1.6, marginBottom: 12 }}>
+            {component.explanationContent || '这里是答案的详细解析内容...'}
+          </div>
+        </div>
+      );
+    }
+    // 得分显示
+    if (component.type === 'scoreDisplay') {
+      const score = component.score || 0;
+      const totalScore = component.totalScore || 100;
+      const percentageValue = Math.round((score / totalScore) * 100);
+      const feedbackMessages: Record<string, string> = {
+        excellent: '太棒了！你掌握得很好！🎉',
+        good: '不错！继续保持！👍',
+        average: '还需努力，加油！💪',
+        needsImprovement: '别灰心，继续学习！📚'
+      };
+      const feedbackColors: Record<string, { bg: string; text: string; icon: string }> = {
+        excellent: { bg: '#d1fae5', text: '#065f46', icon: '🏆' },
+        good: { bg: '#dbeafe', text: '#1e40af', icon: '✨' },
+        average: { bg: '#fef3c7', text: '#92400e', icon: '📈' },
+        needsImprovement: { bg: '#fee2e2', text: '#991b1b', icon: '📖' }
+      };
+      const feedbackType = component.feedbackType || (percentageValue >= 90 ? 'excellent' : percentageValue >= 70 ? 'good' : percentageValue >= 60 ? 'average' : 'needsImprovement');
+      const feedback = feedbackColors[feedbackType];
+      return (
+        <div style={{ width: '100%', height: '100%', padding: 20, backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+          <div style={{ fontSize: 48, marginBottom: 8 }}>{feedback.icon}</div>
+          <div style={{ fontSize: 36, fontWeight: 'bold', color: '#1f2937' }}>
+            {component.percentage !== false ? `${percentageValue}%` : `${score} / ${totalScore}`}
+          </div>
+          {component.showGrade && (
+            <div style={{
+              padding: '8px 20px',
+              backgroundColor: feedback.bg,
+              color: feedback.text,
+              borderRadius: 9999,
+              fontSize: 16,
+              fontWeight: 'bold'
+            }}>
+              {feedbackType === 'excellent' ? '优秀' : feedbackType === 'good' ? '良好' : feedbackType === 'average' ? '及格' : '不及格'}
+            </div>
+          )}
+          <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 14 }}>
+            {feedbackMessages[feedbackType]}
+          </div>
+          {component.feedbackMessage && (
+            <div style={{ textAlign: 'center', color: '#374151', fontSize: 14, marginTop: 8 }}>
+              {component.feedbackMessage}
+            </div>
+          )}
+        </div>
+      );
+    }
     return <div style={{ color: '#9ca3af', textAlign: 'center', padding: 20 }}>未知组件</div>;
   };
 
