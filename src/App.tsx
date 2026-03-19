@@ -1,6 +1,7 @@
 import React, { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
+import { ComponentRenderer } from './components/ComponentRenderer';
 import { PreviewPage } from './PreviewPage';
 import type { WidgetProps, ComponentPanelItem } from './types';
 import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload } from 'lucide-react';
@@ -365,30 +366,7 @@ function App() {
               const width = comp.width || 300;
               const height = comp.height || 200;
               const style: React.CSSProperties = { position: 'absolute', left: comp.x || 0, top: comp.y || 0, width, height };
-              if (comp.type === 'heading') return <div key={comp.id} style={{ ...style, color: comp.color, fontSize: comp.level === 'h1' ? '2.5rem' : '1.5rem' }}>{comp.text}</div>;
-              if (comp.type === 'text') return <div key={comp.id} style={{ ...style, fontSize: comp.fontSize || 16, color: comp.color || '#374151' }}>{comp.content}</div>;
-              if (comp.type === 'image') return <img key={comp.id} src={comp.src} alt={comp.alt} style={{ ...style, borderRadius: comp.borderRadius, objectFit: 'cover' }} />;
-              if (comp.type === 'button') return <div key={comp.id} style={{ ...style, backgroundColor: comp.bgColor, color: comp.textColor, borderRadius: comp.borderRadius, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{comp.buttonText}</div>;
-              if (comp.type === 'card') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 12, padding: 16 }}>{comp.title || '卡片'}</div>;
-              if (comp.type === 'accordion') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>{comp.accordionTitle || '折叠'}</div>;
-              if (comp.type === 'quiz') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>问答</div>;
-              if (comp.type === 'choice') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>选择</div>;
-              if (comp.type === 'fillBlank') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>填空</div>;
-              if (comp.type === 'trueFalse') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>判断</div>;
-              if (comp.type === 'sortable') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>排序</div>;
-              if (comp.type === 'drawing') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>画板</div>;
-              if (comp.type === 'checklist') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>清单</div>;
-              if (comp.type === 'tabs') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>标签</div>;
-              if (comp.type === 'timeline') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>时间</div>;
-              if (comp.type === 'progress') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>进度</div>;
-              if (comp.type === 'video') return <div key={comp.id} style={{ ...style, backgroundColor: '#000', borderRadius: 8, padding: 16, color: '#fff' }}>视频</div>;
-              if (comp.type === 'audio') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>音频</div>;
-              if (comp.type === 'quote') return <div key={comp.id} style={{ ...style, backgroundColor: '#f9fafb', borderLeft: '4px solid #3b82f6', padding: 16, borderRadius: 8 }}>引用</div>;
-              if (comp.type === 'code') return <div key={comp.id} style={{ ...style, backgroundColor: '#1f2937', borderRadius: 8, padding: 16, color: '#fff' }}>代码</div>;
-              if (comp.type === 'table') return <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: 8, padding: 16 }}>表格</div>;
-              if (comp.type === 'tag') return <div key={comp.id} style={{ ...style, display: 'flex', gap: 8 }}>标签</div>;
-              if (comp.type === 'alert') return <div key={comp.id} style={{ ...style, backgroundColor: '#dbeafe', borderRadius: 8, padding: 16 }}>提示</div>;
-              return null;
+              return <ComponentRenderer key={comp.id} component={comp} style={style} />;
             })}
           </div>
         </div>
