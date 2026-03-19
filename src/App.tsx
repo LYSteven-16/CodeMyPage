@@ -73,7 +73,7 @@ function App() {
     setSelectedId(newComponent.id);
   };
 
-  const handleExport = () => {
+  const generateHTML = () => {
     const renderComponentHTML = (comp: WidgetProps): string => {
       const left = comp.x || 0;
       const top = comp.y || 0;
@@ -131,7 +131,11 @@ function App() {
       }
     };
 
-    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${CANVAS_MIN_HEIGHT}px;border-radius:${gridSettings.canvasBorderRadius}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${CANVAS_MIN_HEIGHT}px;border-radius:${gridSettings.canvasBorderRadius}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
+  };
+
+  const handleExport = () => {
+    const html = generateHTML();
     const b = new Blob([html], { type: 'text/html' });
     const u = URL.createObjectURL(b);
     const a = document.createElement('a'); a.href = u; a.download = 'my-page.html'; a.click();
@@ -482,45 +486,8 @@ function App() {
             </div>
 
             <button onClick={() => {
-              // 生成HTML并保存
-              const htmlParts = components.map(comp => {
-                const width = comp.width || 300;
-                const height = comp.height || 200;
-                const left = comp.x || 0;
-                const top = comp.y || 0;
-                switch (comp.type) {
-                  case 'heading':
-                    return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;color:${comp.color || '#000'};font-size:${comp.level === 'h1' ? '2.5rem' : '1.5rem'};font-weight:bold">${comp.text || ''}</div>`;
-                  case 'text':
-                    return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;font-size:${comp.fontSize || 16}px;color:${comp.color || '#374151'}">${comp.content || ''}</div>`;
-                  case 'image':
-                    return `<img src="${comp.src || ''}" style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;border-radius:${comp.borderRadius || 0}px;object-fit:cover">`;
-                  case 'button':
-                    return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:${comp.bgColor || '#3b82f6'};color:${comp.textColor || '#fff'};border-radius:${comp.borderRadius || 8}px;display:flex;align-items:center;justify-content:center;padding:12px">${comp.buttonText || '按钮'}</div>`;
-                  case 'card':
-                    return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'}">` : ''}<div style="padding:16px"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></div>`;
-                  default:
-                    return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center">${comp.type}</div>`;
-                }
-              }).join('');
-              
-              const fullHtml = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>预览</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: ${gridSettings.dotGridBackground}; min-height: 100vh; padding: 20px; }
-.canvas { position: relative; width: ${CANVAS_WIDTH}px; min-height: ${CANVAS_MIN_HEIGHT}px; background: ${gridSettings.canvasBackground}; border-radius: ${gridSettings.canvasBorderRadius}px; margin: 0 auto; }
-</style>
-</head>
-<body>
-<div class="canvas">${htmlParts}</div>
-</body>
-</html>`;
-              
-              sessionStorage.setItem('previewHtml', fullHtml);
+              const html = generateHTML();
+              sessionStorage.setItem('previewHtml', html);
               window.open('/CodeMyPage/preview', '_blank');
             }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
