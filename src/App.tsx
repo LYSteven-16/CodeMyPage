@@ -634,22 +634,15 @@ function App() {
                 </div>
               );
               // 代码块
-              if (comp.type === 'code') {
-                const codeRef = useRef(null);
-                const handleCopy = () => {
-                  navigator.clipboard.writeText(comp.code || '// 代码');
-                  alert('已复制到剪贴板！');
-                };
-                return (
-                  <div key={comp.id} style={{ ...style, backgroundColor: '#1f2937', borderRadius: comp.borderRadius || 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#111827', borderBottom: '1px solid #374151' }}>
-                      <span style={{ color: '#9ca3af', fontSize: 12 }}>代码</span>
-                      <button onClick={handleCopy} style={{ padding: '4px 8px', backgroundColor: '#374151', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>复制</button>
-                    </div>
-                    <pre ref={codeRef} style={{ flex: 1, padding: 16, overflow: 'auto', color: '#e5e7eb', fontSize: 14, fontFamily: 'monospace', margin: 0 }}>{comp.code || '// 代码'}</pre>
+              if (comp.type === 'code') return (
+                <div key={comp.id} style={{ ...style, backgroundColor: '#1f2937', borderRadius: comp.borderRadius || 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#111827', borderBottom: '1px solid #374151' }}>
+                    <span style={{ color: '#9ca3af', fontSize: 12 }}>代码</span>
+                    <button onClick={() => { navigator.clipboard.writeText(comp.code || '// 代码'); alert('已复制到剪贴板！'); }} style={{ padding: '4px 8px', backgroundColor: '#374151', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>复制</button>
                   </div>
-                );
-              }
+                  <pre style={{ flex: 1, padding: 16, overflow: 'auto', color: '#e5e7eb', fontSize: 14, fontFamily: 'monospace', margin: 0 }}>{comp.code || '// 代码'}</pre>
+                </div>
+              );
               // 表格
               if (comp.type === 'table') return (
                 <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
