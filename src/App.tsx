@@ -303,13 +303,13 @@ function App() {
     const previewHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
     
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen" style={{ backgroundColor: gridSettings.dotGridBackground }}>
         <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
           <h1 className="text-xl font-semibold">预览模式</h1>
           <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-200 rounded-lg">返回编辑</button>
         </div>
         <div className="py-8 px-4 flex justify-center">
-          <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, background: 'white', margin: '0 auto' }}>
+          <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, margin: '0 auto' }}>
             {components.map(comp => {
               const width = comp.width || 300;
               const height = comp.height || 200;
