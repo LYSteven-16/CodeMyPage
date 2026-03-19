@@ -85,7 +85,7 @@ function App() {
       }
     };
 
-    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:#f9fafb}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:white;min-height:${CANVAS_MIN_HEIGHT}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
+    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${CANVAS_MIN_HEIGHT}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
     const b = new Blob([html], { type: 'text/html' });
     const u = URL.createObjectURL(b);
     const a = document.createElement('a'); a.href = u; a.download = 'my-page.html'; a.click();
