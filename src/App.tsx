@@ -20,7 +20,7 @@ const CANVAS_MIN_HEIGHT = 1600;
 
 function App() {
   // 检测是否是预览模式
-  const isPreviewMode = window.location.pathname === '/preview';
+  const isPreviewMode = window.location.pathname.endsWith('/preview');
   if (isPreviewMode) {
     return <PreviewPage />;
   }
