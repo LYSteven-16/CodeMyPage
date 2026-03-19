@@ -486,7 +486,7 @@ function App() {
               sessionStorage.setItem('previewComponents', JSON.stringify(components));
               sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
               // 打开新标签页
-              window.open('/preview', '_blank');
+              window.open('/CodeMyPage/preview', '_blank');
             }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
             <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
