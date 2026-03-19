@@ -27,7 +27,11 @@ export type WidgetType =
   | 'code'
   | 'table'
   | 'tag'
-  | 'alert';
+  | 'alert'
+  // 学习反馈类
+  | 'answerSheet'
+  | 'answerExplanation'
+  | 'scoreDisplay';
 
 // 组件属性
 export interface WidgetProps {
@@ -173,6 +177,28 @@ export interface WidgetProps {
   alertType?: 'success' | 'warning' | 'error' | 'info';
   alertTitle?: string;
   alertContent?: string;
+  
+  // 答题卡
+  totalQuestions?: number;
+  answeredQuestions?: number[];
+  markedQuestions?: number[];
+  questionStatus?: 'all' | 'answered' | 'unanswered' | 'marked';
+  
+  // 答案解析
+  explanationTitle?: string;
+  explanationContent?: string;
+  relatedQuestion?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  showTip?: boolean;
+  tipText?: string;
+  
+  // 得分显示
+  score?: number;
+  totalScore?: number;
+  percentage?: boolean;
+  feedbackMessage?: string;
+  feedbackType?: 'excellent' | 'good' | 'average' | 'needsImprovement';
+  showGrade?: boolean;
 }
 
 // 组件面板项

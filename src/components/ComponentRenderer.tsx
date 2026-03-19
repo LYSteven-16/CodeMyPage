@@ -32,6 +32,7 @@ export function ComponentRenderer({ component, style }: Props) {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dropIndicator, setDropIndicator] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showTip, setShowTip] = useState(false);
 
   const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -199,6 +200,227 @@ export function ComponentRenderer({ component, style }: Props) {
       const alertColors: Record<string, { bg: string; border: string; title: string; icon: string }> = { success: { bg: '#d1fae5', border: '#10b981', title: '#065f46', icon: '✓' }, warning: { bg: '#fef3c7', border: '#f59e0b', title: '#92400e', icon: '⚠' }, error: { bg: '#fee2e2', border: '#ef4444', title: '#991b1b', icon: '✕' }, info: { bg: '#dbeafe', border: '#3b82f6', title: '#1e40af', icon: 'ℹ' } };
       const alert = alertColors[(component as any).alertType || 'info'];
       return <div style={style}><div style={{ ...fillStyle, padding: 16, backgroundColor: alert.bg, borderLeft: `4px solid ${alert.border}`, borderRadius: 8, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div style={{ fontWeight: 'bold', color: alert.title, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}><span>{alert.icon}</span> {(component as any).alertTitle || '提示'}</div><div style={{ color: '#374151', fontSize: 14 }}>{(component as any).alertContent || '提示内容'}</div></div></div>;
+    }
+    case 'answerSheet': {
+      const totalQuestions = (component as any).totalQuestions || 10;
+      const answeredQuestions = (component as any).answeredQuestions || [];
+      const markedQuestions = (component as any).markedQuestions || [];
+      const questionStatus = (component as any).questionStatus || 'all';
+      const questions = Array.from({ length: totalQuestions }, (_, i) => i + 1);
+      const containerStyle: React.CSSProperties = {
+        ...fillStyle,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        overflow: 'auto'
+      };
+      return (
+        <div style={style}>
+          <div style={containerStyle}>
+            <div style={{ fontWeight: 'bold', marginBottom: 12, color: '#1f2937' }}>答题卡</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+              {questions.map((q: number) => {
+                const isAnswered = answeredQuestions.includes(q);
+                const isMarked = markedQuestions.includes(q);
+                let bgColor = '#f3f4f6', borderColor = '#d1d5db', textColor = '#6b7280';
+                if (isAnswered) {
+                  bgColor = '#d1fae5';
+                  borderColor = '#10b981';
+                  textColor = '#065f46';
+                }
+                if (isMarked) {
+                  bgColor = '#fef3c7';
+                  borderColor = '#f59e0b';
+                  textColor = '#92400e';
+                }
+                if (questionStatus === 'answered' && !isAnswered) return null;
+                if (questionStatus === 'unanswered' && isAnswered) return null;
+                if (questionStatus === 'marked' && !isMarked) return null;
+                return (
+                  <div key={q} style={{
+                    padding: '8px 12px',
+                    backgroundColor: bgColor,
+                    border: `2px solid ${borderColor}`,
+                    borderRadius: 6,
+                    color: textColor,
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                  }}>
+                    {q}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 16, fontSize: 12, color: '#6b7280' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: '#d1fae5', border: '2px solid #10b981', borderRadius: 4 }}></div>
+                <span>已答 ({answeredQuestions.length})</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: '#fef3c7', border: '2px solid #f59e0b', borderRadius: 4 }}></div>
+                <span>标记 ({markedQuestions.length})</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 16, height: 16, backgroundColor: '#f3f4f6', border: '2px solid #d1d5db', borderRadius: 4 }}></div>
+                <span>未答 ({totalQuestions - answeredQuestions.length})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    case 'answerExplanation': {
+      const difficultyColors: Record<string, { bg: string; text: string }> = {
+        easy: { bg: '#d1fae5', text: '#065f46' },
+        medium: { bg: '#fef3c7', text: '#92400e' },
+        hard: { bg: '#fee2e2', text: '#991b1b' }
+      };
+      const difficulty = difficultyColors[(component as any).difficulty || 'medium'];
+      const containerStyle: React.CSSProperties = {
+        ...fillStyle,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        overflow: 'auto'
+      };
+      return (
+        <div style={style}>
+          <div style={containerStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontWeight: 'bold', color: '#1f2937' }}>
+                {(component as any).explanationTitle || '答案解析'}
+              </div>
+              <span style={{
+                padding: '4px 10px',
+                backgroundColor: difficulty.bg,
+                color: difficulty.text,
+                borderRadius: 4,
+                fontSize: 12,
+                fontWeight: 'bold'
+              }}>
+                {(component as any).difficulty || '中等'}
+              </span>
+            </div>
+            {(component as any).relatedQuestion && (
+              <div style={{
+                padding: 10,
+                backgroundColor: '#f3f4f6',
+                borderRadius: 4,
+                marginBottom: 12,
+                fontSize: 14,
+                color: '#6b7280'
+              }}>
+                <strong>相关问题：</strong>
+                {(component as any).relatedQuestion}
+              </div>
+            )}
+            <div style={{ color: '#374151', lineHeight: 1.6, marginBottom: 12 }}>
+              {(component as any).explanationContent || '这里是答案的详细解析内容...'}
+            </div>
+            {(component as any).showTip && (
+              <div>
+                <button
+                  onClick={() => setShowTip(!showTip)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#f3f4f6',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    color: '#374151',
+                    fontSize: 14,
+                    marginBottom: 8
+                  }}
+                >
+                  {showTip ? '🙈 隐藏提示' : '💡 显示提示'}
+                </button>
+                {showTip && (
+                  <div style={{
+                    padding: 10,
+                    backgroundColor: '#dbeafe',
+                    borderRadius: 4,
+                    color: '#1e40af',
+                    fontSize: 14
+                  }}>
+                    💡 {(component as any).tipText || '这是一个学习提示...'}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    case 'scoreDisplay': {
+      const score = (component as any).score || 0;
+      const totalScore = (component as any).totalScore || 100;
+      const percentage = (component as any).percentage !== false;
+      const percentageValue = Math.round((score / totalScore) * 100);
+      const feedbackMessages: Record<string, string> = {
+        excellent: '太棒了！你掌握得很好！🎉',
+        good: '不错！继续保持！👍',
+        average: '还需努力，加油！💪',
+        needsImprovement: '别灰心，继续学习！📚'
+      };
+      const feedbackColors: Record<string, { bg: string; text: string; icon: string }> = {
+        excellent: { bg: '#d1fae5', text: '#065f46', icon: '🏆' },
+        good: { bg: '#dbeafe', text: '#1e40af', icon: '✨' },
+        average: { bg: '#fef3c7', text: '#92400e', icon: '📈' },
+        needsImprovement: { bg: '#fee2e2', text: '#991b1b', icon: '📖' }
+      };
+      const feedbackType = (component as any).feedbackType || (percentageValue >= 90 ? 'excellent' : percentageValue >= 70 ? 'good' : percentageValue >= 60 ? 'average' : 'needsImprovement');
+      const feedback = feedbackColors[feedbackType];
+      const containerStyle: React.CSSProperties = {
+        ...fillStyle,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        padding: 20,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 16
+      };
+      return (
+        <div style={style}>
+          <div style={containerStyle}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>{feedback.icon}</div>
+            <div style={{ fontSize: 36, fontWeight: 'bold', color: '#1f2937' }}>
+              {percentage ? `${percentageValue}%` : `${score} / ${totalScore}`}
+            </div>
+            {(component as any).showGrade && (
+              <div style={{
+                padding: '8px 20px',
+                backgroundColor: feedback.bg,
+                color: feedback.text,
+                borderRadius: 9999,
+                fontSize: 16,
+                fontWeight: 'bold'
+              }}>
+                {feedbackType === 'excellent' ? '优秀' : feedbackType === 'good' ? '良好' : feedbackType === 'average' ? '及格' : '不及格'}
+              </div>
+            )}
+            <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 14 }}>
+              {feedbackMessages[feedbackType]}
+            </div>
+            {(component as any).feedbackMessage && (
+              <div style={{ textAlign: 'center', color: '#374151', fontSize: 14, marginTop: 8 }}>
+                {(component as any).feedbackMessage}
+              </div>
+            )}
+          </div>
+        </div>
+      );
     }
     default:
       return <div style={style}><div style={{ ...fillStyle, backgroundColor: '#f3f4f6', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>{component.type}</div></div>;

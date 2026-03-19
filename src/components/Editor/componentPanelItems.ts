@@ -238,5 +238,46 @@ export const componentPanelItems: ComponentPanelItem[] = [
       alertContent: '这是一条提示信息。',
       height: 100
     }
+  },
+  
+  // ===== 学习反馈类 =====
+  {
+    type: 'answerSheet',
+    label: '答题卡',
+    icon: 'ClipboardCheck',
+    defaultProps: {
+      totalQuestions: 10,
+      answeredQuestions: [1, 2, 3, 5, 7],
+      markedQuestions: [4, 8],
+      questionStatus: 'all',
+      height: 200
+    }
+  },
+  {
+    type: 'answerExplanation',
+    label: '答案解析',
+    icon: 'BookOpen',
+    defaultProps: {
+      explanationTitle: '答案解析',
+      explanationContent: '这是一道关于光合作用的题目。正确答案是B，因为光合作用需要在光照条件下进行...',
+      relatedQuestion: '植物进行光合作用的主要器官是什么？',
+      difficulty: 'medium',
+      showTip: true,
+      tipText: '记住：光合作用主要发生在植物的叶片中！',
+      height: 180
+    }
+  },
+  {
+    type: 'scoreDisplay',
+    label: '得分显示',
+    icon: 'Trophy',
+    defaultProps: {
+      score: 85,
+      totalScore: 100,
+      percentage: true,
+      showGrade: true,
+      feedbackMessage: '继续保持，下一章节会更难哦！',
+      height: 180
+    }
   }
 ];
