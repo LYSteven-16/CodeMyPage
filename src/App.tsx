@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef } from 'react';
+import React, { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import type { WidgetProps, ComponentPanelItem } from './types';
@@ -85,9 +85,9 @@ function App() {
         case 'card':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'}">` : ''}<div style="padding:16px;height:40%;display:flex;flex-direction:column"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></div>`;
         case 'accordion':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column"><div style="padding:16px;background:${comp.accordionTitleColor || '#f3f4f6'};font-weight:bold;height:50%">${comp.accordionTitle || ''}</div><div style="padding:16px;color:${comp.accordionContentColor || '#374151'};height:50%">${comp.accordionContent || ''}</div></div>`;
+          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden" id="accordion-${comp.id}"><div onclick="toggleAccordion('${comp.id}')" style="padding:16px;background:${comp.accordionTitleColor || '#f3f4f6'};font-weight:bold;cursor:pointer;display:flex;justify-content:space-between;align-items:center">${comp.accordionTitle || '点击展开'}<span id="accordion-icon-${comp.id}" style="transition:transform 0.2s">▼</span></div><div id="accordion-content-${comp.id}" style="padding:16px;color:${comp.accordionContentColor || '#374151'};max-height:0;overflow:hidden;transition:max-height 0.3s">${comp.accordionContent || '隐藏内容'}</div></div><script>window.toggleAccordion=function(id){var c=document.getElementById('accordion-content-'+id),i=document.getElementById('accordion-icon-'+id);c.style.maxHeight=c.style.maxHeight==='0px'||c.style.maxHeight===''?c.scrollHeight+'px':'0';i.style.transform=c.style.maxHeight==='0px'||c.style.maxHeight===''?'rotate(180deg)':'rotate(0)';};</script>`;
         case 'quiz':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px;display:flex;flex-direction:column"><div style="font-weight:bold;color:${comp.questionColor || '#1f2937'};margin-bottom:12px">${comp.question || ''}</div><div style="color:${comp.answerColor || '#059669'};background:#d1fae5;padding:12px;border-radius:4px">${comp.answer || ''}</div></div>`;
+          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="quiz-${comp.id}"><div style="font-weight:bold;color:${comp.questionColor || '#1f2937'};margin-bottom:12px">${comp.question || '问题'}</div><button onclick="showAnswer('${comp.id}')" id="quiz-btn-${comp.id}" style="padding:8px 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer">显示答案</button><div id="quiz-answer-${comp.id}" style="margin-top:12px;display:none;color:${comp.answerColor || '#059669'};background:#d1fae5;padding:12px;border-radius:4px">${comp.answer || '答案'}</div></div><script>window.showAnswer=function(id){document.getElementById('quiz-answer-'+id).style.display='block';document.getElementById('quiz-btn-'+id).style.display='none';};</script>`;
         case 'choice':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="choice-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.question || '请选择'}</div><div style="display:flex;flex-direction:column;gap:8">${(comp.options || ['选项A','选项B']).map((opt, i) => `<div onclick="selectChoice('${comp.id}',this,${i===0})" style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">${opt}</div>`).join('')}</div><div id="choice-result-${comp.id}" style="margin-top:12px"></div></div><script>window.selectChoice=function(id,el,isCorrect){var result=document.getElementById('choice-result-'+id);if(isCorrect){el.style.background='#d1fae5';el.style.borderColor='#059669';result.innerHTML='<span style="color:#059669">✓ 回答正确！</span>';}else{el.style.background='#fee2e2';el.style.borderColor='#dc2626';result.innerHTML='<span style="color:#dc2626">✗ 回答错误，再试试！</span>';}};</script>`;
         case 'fillBlank':
@@ -113,7 +113,7 @@ function App() {
         case 'quote':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#f9fafb;border-left:4px solid #3b82f6;padding:16px;border-radius:${comp.borderRadius || 8}px"><div style="font-size:16px;font-style:italic;color:#374151;margin-bottom:8px">"引用内容"</div><div style="font-size:14px;color:#6b7280;text-align:right">— 作者</div></div>`;
         case 'code':
-          return `<pre style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#1f2937;border-radius:${comp.borderRadius || 8}px;padding:16px;overflow:auto;color:#e5e7eb;font-size:14px;font-family:monospace;margin:0">// 代码</pre>`;
+          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#1f2937;border-radius:${comp.borderRadius || 8}px;overflow:hidden;display:flex;flex-direction:column"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#111827;border-bottom:1px solid #374151"><span style="color:#9ca3af;font-size:12px">代码</span><button onclick="copyCode('${comp.id}')" style="padding:4px 8px;background:#374151;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">复制</button></div><pre id="code-${comp.id}" style="flex:1;padding:16px;overflow:auto;color:#e5e7eb;font-size:14px;font-family:monospace;margin:0">${comp.code || '// 代码'}</pre></div><script>window.copyCode=function(id){navigator.clipboard.writeText(document.getElementById('code-'+id).innerText);alert('已复制到剪贴板！');};</script>`;
         case 'table':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f9fafb"><th style="padding:12px;text-align:left;border-bottom:1px solid #e5e7eb;font-weight:bold">列1</th><th style="padding:12px;text-align:left;border-bottom:1px solid #e5e7eb;font-weight:bold">列2</th></tr></thead><tbody><tr><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容1</td><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容2</td></tr><tr style="background:#f9fafb"><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容3</td><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容4</td></tr></tbody></table></div>`;
         case 'tag':
@@ -369,18 +369,28 @@ function App() {
                   </div>
                 </div>
               );
-              if (comp.type === 'accordion') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ padding: 16, backgroundColor: comp.accordionTitleColor || '#f3f4f6', fontWeight: 'bold', height: '50%' }}>{comp.accordionTitle || '点击展开'}</div>
-                  <div style={{ padding: 16, color: comp.accordionContentColor || '#374151', height: '50%' }}>{comp.accordionContent || '隐藏内容'}</div>
-                </div>
-              );
-              if (comp.type === 'quiz') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontWeight: 'bold', color: comp.questionColor || '#1f2937', marginBottom: 12 }}>{comp.question || '问题'}</div>
-                  <div style={{ color: comp.answerColor || '#059669', backgroundColor: '#d1fae5', padding: 12, borderRadius: 4 }}>{comp.answer || '答案'}</div>
-                </div>
-              );
+              if (comp.type === 'accordion') {
+                const [open, setOpen] = useState(false);
+                return (
+                  <div key={comp.id} data-accordion style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                    <div onClick={() => setOpen(!open)} style={{ padding: 16, backgroundColor: comp.accordionTitleColor || '#f3f4f6', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {comp.accordionTitle || '点击展开'}
+                      <span style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▼</span>
+                    </div>
+                    <div style={{ padding: 16, color: comp.accordionContentColor || '#374151', maxHeight: open ? '200px' : '0', overflow: 'hidden', transition: 'maxHeight 0.3s' }}>{comp.accordionContent || '隐藏内容'}</div>
+                  </div>
+                );
+              }
+              if (comp.type === 'quiz') {
+                const [show, setShow] = useState(false);
+                return (
+                  <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                    <div style={{ fontWeight: 'bold', color: comp.questionColor || '#1f2937', marginBottom: 12 }}>{comp.question || '问题'}</div>
+                    {!show && <button onClick={() => setShow(true)} style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>显示答案</button>}
+                    {show && <div style={{ color: comp.answerColor || '#059669', backgroundColor: '#d1fae5', padding: 12, borderRadius: 4 }}>{comp.answer || '答案'}</div>}
+                  </div>
+                );
+              }
               // 选择题
               if (comp.type === 'choice') return (
                 <div key={comp.id} data-choice style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
@@ -502,11 +512,22 @@ function App() {
                 </div>
               );
               // 代码块
-              if (comp.type === 'code') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#1f2937', borderRadius: comp.borderRadius || 8, padding: 16, overflow: 'auto' }}>
-                  <pre style={{ color: '#e5e7eb', fontSize: 14, fontFamily: 'monospace', margin: 0 }}>// 代码</pre>
-                </div>
-              );
+              if (comp.type === 'code') {
+                const codeRef = useRef(null);
+                const handleCopy = () => {
+                  navigator.clipboard.writeText(comp.code || '// 代码');
+                  alert('已复制到剪贴板！');
+                };
+                return (
+                  <div key={comp.id} style={{ ...style, backgroundColor: '#1f2937', borderRadius: comp.borderRadius || 8, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#111827', borderBottom: '1px solid #374151' }}>
+                      <span style={{ color: '#9ca3af', fontSize: 12 }}>代码</span>
+                      <button onClick={handleCopy} style={{ padding: '4px 8px', backgroundColor: '#374151', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>复制</button>
+                    </div>
+                    <pre ref={codeRef} style={{ flex: 1, padding: 16, overflow: 'auto', color: '#e5e7eb', fontSize: 14, fontFamily: 'monospace', margin: 0 }}>{comp.code || '// 代码'}</pre>
+                  </div>
+                );
+              }
               // 表格
               if (comp.type === 'table') return (
                 <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
