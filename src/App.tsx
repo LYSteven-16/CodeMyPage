@@ -2,7 +2,7 @@ import { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import type { WidgetProps, ComponentPanelItem } from './types';
-import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, FileText, Move, Save, Upload } from 'lucide-react';
+import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, FileText, Move, Save, Upload } from 'lucide-react';
 
 interface GridSettings {
   dotSize: number;
@@ -23,6 +23,8 @@ function App() {
   const [showPreview, setShowPreview] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [showGridSettings, setShowGridSettings] = useState(false);
+  const [showBgSettings, setShowBgSettings] = useState(false);
+  const [showCanvasSettings, setShowCanvasSettings] = useState(false);
   const [showComponentEditor, setShowComponentEditor] = useState(false);
   const workAreaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -364,6 +366,34 @@ function App() {
               <span className="text-sm w-12 text-center">{zoom}%</span>
               <button onClick={() => setZoom(Math.min(200, zoom + 25))} className="px-2 py-1 text-gray-600 hover:text-gray-800 font-bold">+</button>
             </div>
+            
+            {/* 网格设置 */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowGridSettings(!showGridSettings); }}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${showGridSettings ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'} hover:bg-gray-50`}
+            >
+              <Grid3X3 size={16} />
+              <span className="text-sm">网格</span>
+            </button>
+            
+            {/* 背景颜色 */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowBgSettings(!showBgSettings); }}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${showBgSettings ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'} hover:bg-gray-50`}
+            >
+              <div className="w-4 h-4 rounded border" style={{ backgroundColor: gridSettings.dotGridBackground }}></div>
+              <span className="text-sm">背景</span>
+            </button>
+            
+            {/* 画布颜色 */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowCanvasSettings(!showCanvasSettings); }}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${showCanvasSettings ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'} hover:bg-gray-50`}
+            >
+              <div className="w-4 h-4 rounded border" style={{ backgroundColor: gridSettings.canvasBackground }}></div>
+              <span className="text-sm">画布</span>
+            </button>
+
             <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
             <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
