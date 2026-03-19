@@ -487,8 +487,8 @@ function App() {
             </div>
 
             <button onClick={() => {
-              const html = generateHTML();
-              sessionStorage.setItem('previewHtml', html);
+              sessionStorage.setItem('previewComponents', JSON.stringify(components));
+              sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
               window.open('/CodeMyPage/preview', '_blank');
             }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
