@@ -357,16 +357,10 @@ function App() {
   return (
     <>
       {renderEditModal()}
-      <div className="h-screen flex flex-col" onClick={() => setShowGridSettings(false)}>
-        <div className="h-14 bg-white border-b flex items-center justify-between px-4">
+      <div className="h-screen flex flex-col">
+        <div className="h-14 bg-white border-b flex items-center justify-between px-4" onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); }}>
           <h1 className="text-xl font-bold text-blue-600">CodeMyPage</h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-2">
-              <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="px-2 py-1 text-gray-600 hover:text-gray-800 font-bold">−</button>
-              <span className="text-sm w-12 text-center">{zoom}%</span>
-              <button onClick={() => setZoom(Math.min(200, zoom + 25))} className="px-2 py-1 text-gray-600 hover:text-gray-800 font-bold">+</button>
-            </div>
-            
             {/* 网格设置 */}
             <div className="relative">
               <button 
@@ -377,15 +371,20 @@ function App() {
                 <span className="text-sm">网格</span>
               </button>
               {showGridSettings && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-4 w-56 z-50">
-                  <label className="flex items-center gap-2 text-sm mb-3">
-                    <input type="checkbox" checked={gridSettings.snapToGrid} onChange={(e) => handleGridChange({ snapToGrid: e.target.checked })} className="w-4 h-4" />
-                    启用网格对齐
-                  </label>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="w-12">间距:</span>
-                    <input type="range" min="0" max="60" value={gridSettings.dotSpacing} onChange={(e) => handleGridChange({ dotSpacing: parseInt(e.target.value) })} className="flex-1" />
-                    <span className="w-10 text-right text-xs">{gridSettings.dotSpacing}px</span>
+                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-3 w-64 z-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium">网格设置</span>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={gridSettings.snapToGrid} onChange={(e) => handleGridChange({ snapToGrid: e.target.checked })} className="w-4 h-4 accent-blue-500" />
+                      启用对齐
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="w-14 text-gray-600">间距</span>
+                      <input type="range" min="0" max="60" value={gridSettings.dotSpacing} onChange={(e) => handleGridChange({ dotSpacing: parseInt(e.target.value) })} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                      <span className="w-12 text-right text-xs text-gray-500">{gridSettings.dotSpacing}px</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -401,11 +400,14 @@ function App() {
                 <span className="text-sm">背景</span>
               </button>
               {showBgSettings && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-4 w-48 z-50">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="w-12">颜色:</span>
-                    <input type="color" value={gridSettings.dotGridBackground} onChange={(e) => handleGridChange({ dotGridBackground: e.target.value })} className="w-8 h-8 rounded cursor-pointer border" />
-                    <span className="text-xs text-gray-500">{gridSettings.dotGridBackground}</span>
+                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-3 w-64 z-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">背景颜色</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-600">颜色</span>
+                    <input type="color" value={gridSettings.dotGridBackground} onChange={(e) => handleGridChange({ dotGridBackground: e.target.value })} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-gray-200" />
+                    <span className="text-xs text-gray-500 font-mono">{gridSettings.dotGridBackground}</span>
                   </div>
                 </div>
               )}
@@ -421,16 +423,21 @@ function App() {
                 <span className="text-sm">画布</span>
               </button>
               {showCanvasSettings && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-4 w-56 z-50">
-                  <div className="flex items-center gap-2 text-sm mb-3">
-                    <span className="w-12">颜色:</span>
-                    <input type="color" value={gridSettings.canvasBackground} onChange={(e) => handleGridChange({ canvasBackground: e.target.value })} className="w-8 h-8 rounded cursor-pointer border" />
-                    <span className="text-xs text-gray-500">{gridSettings.canvasBackground}</span>
+                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-3 w-64 z-50" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">画布设置</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="w-12">圆角:</span>
-                    <input type="range" min="0" max="60" value={gridSettings.canvasBorderRadius} onChange={(e) => handleGridChange({ canvasBorderRadius: parseInt(e.target.value) })} className="flex-1" />
-                    <span className="w-10 text-right text-xs">{gridSettings.canvasBorderRadius}px</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-600 w-14">颜色</span>
+                      <input type="color" value={gridSettings.canvasBackground} onChange={(e) => handleGridChange({ canvasBackground: e.target.value })} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-gray-200" />
+                      <span className="text-xs text-gray-500 font-mono">{gridSettings.canvasBackground}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-14">圆角</span>
+                      <input type="range" min="0" max="60" value={gridSettings.canvasBorderRadius} onChange={(e) => handleGridChange({ canvasBorderRadius: parseInt(e.target.value) })} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
+                      <span className="w-12 text-right text-xs text-gray-500">{gridSettings.canvasBorderRadius}px</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -442,9 +449,10 @@ function App() {
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
           </div>
         </div>
-        <div className={`flex-1 flex overflow-hidden transition-all ${showComponentEditor ? 'mr-80' : ''}`}>
+        <div className={`flex-1 flex overflow-hidden transition-all ${showComponentEditor ? 'mr-80' : ''}`} onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); }}>
           <ComponentPanel onAdd={handleAddComponent} />
           <WorkArea 
+            onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); }}
             ref={workAreaRef}
             canvasRef={canvasRef}
             components={components} 
@@ -497,9 +505,15 @@ function App() {
           </>
         )}
 
-        <div className="fixed bottom-6 right-6 z-40">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/90 rounded-full shadow border text-xs text-gray-500">
-            <span>{CANVAS_WIDTH} × {CANVAS_MIN_HEIGHT}</span>
+        {/* 右下角：画布尺寸 + 缩放 */}
+        <div className="fixed bottom-6 right-6 z-40 flex items-center gap-3">
+          <div className="flex items-center gap-1 px-3 py-1.5 bg-white/90 rounded-full shadow border">
+            <span className="text-xs text-gray-500">{CANVAS_WIDTH} × {CANVAS_MIN_HEIGHT}</span>
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 bg-white/90 rounded-full shadow border">
+            <button onClick={() => setZoom(Math.max(25, zoom - 25))} className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full font-bold">−</button>
+            <span className="text-xs text-gray-600 w-10 text-center">{zoom}%</span>
+            <button onClick={() => setZoom(Math.min(200, zoom + 25))} className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full font-bold">+</button>
           </div>
         </div>
       </div>
