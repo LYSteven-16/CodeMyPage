@@ -341,6 +341,9 @@ function App() {
   if (showPreview) {
     const previewHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
     
+    // 为预览生成唯一ID
+    const previewId = 'preview-' + Date.now();
+    
     return (
       <div className="min-h-screen" style={{ backgroundColor: gridSettings.dotGridBackground }}>
         <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
@@ -348,7 +351,7 @@ function App() {
           <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-200 rounded-lg">返回编辑</button>
         </div>
         <div className="py-8 px-4 flex justify-center">
-          <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, borderRadius: gridSettings.canvasBorderRadius, margin: '0 auto' }}>
+          <div id={previewId} style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, borderRadius: gridSettings.canvasBorderRadius, margin: '0 auto' }}>
             {components.map(comp => {
               const width = comp.width || 300;
               const height = comp.height || 200;
@@ -380,30 +383,34 @@ function App() {
               );
               // 选择题
               if (comp.type === 'choice') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                <div key={comp.id} data-choice style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: 12 }}>{comp.question || '请选择'}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {(comp.options || ['选项A', '选项B']).map((opt, i) => (
-                      <div key={i} style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>{opt}</div>
+                      <div key={i} data-option data-correct={i === 0 ? 'true' : 'false'} style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'pointer' }}>{opt}</div>
                     ))}
                   </div>
+                  <div data-result style={{ marginTop: 12 }}></div>
                 </div>
               );
               // 填空题
               if (comp.type === 'fillBlank') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                <div key={comp.id} data-fillblank style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: 12 }}>填空题</div>
-                  <input type="text" placeholder="请输入答案" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6 }} />
+                  <input type="text" placeholder="请输入答案" style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, marginBottom: 8 }} />
+                  <button data-check style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>检查答案</button>
+                  <div data-result style={{ marginTop: 8 }}></div>
                 </div>
               );
               // 判断题
               if (comp.type === 'trueFalse') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                <div key={comp.id} data-truefalse style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: 12 }}>判断题</div>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button style={{ padding: '8px 24px', border: '1px solid #e5e7eb', borderRadius: 6, backgroundColor: '#fff' }}>√ 正确</button>
                     <button style={{ padding: '8px 24px', border: '1px solid #e5e7eb', borderRadius: 6, backgroundColor: '#fff' }}>× 错误</button>
                   </div>
+                  <div data-result style={{ marginTop: 12 }}></div>
                 </div>
               );
               // 排序题
@@ -419,13 +426,20 @@ function App() {
               );
               // 画板
               if (comp.type === 'drawing') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
-                  <canvas style={{ width: '100%', height: '100%', backgroundColor: '#fafafa' }} />
+                <div key={comp.id} data-drawing style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', gap: 8, padding: 8, background: '#f3f4f6', borderBottom: '1px solid #e5e7eb', alignItems: 'center' }}>
+                    <button style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4, background: '#fff', cursor: 'pointer' }}>✏️ 画笔</button>
+                    <button style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4, background: '#fff', cursor: 'pointer' }}>🧹 橡皮</button>
+                    <button style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: 4, background: '#fff', cursor: 'pointer' }}>🗑️ 清空</button>
+                    <input type="color" defaultValue={comp.brushColor || '#000000'} style={{ width: 30, height: 30, border: 'none', cursor: 'pointer' }} />
+                    <input type="range" defaultValue={comp.brushSize || 3} min="1" max="20" style={{ width: 80 }} />
+                  </div>
+                  <canvas style={{ flex: 1, cursor: 'crosshair', background: '#fafafa' }} />
                 </div>
               );
               // 清单
               if (comp.type === 'checklist') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                <div key={comp.id} data-checklist style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
                   <div style={{ fontWeight: 'bold', marginBottom: 12 }}>{comp.title || '待办清单'}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {(comp.checklistItems || [{ id: '1', text: '待办事项 1' }, { id: '2', text: '待办事项 2' }]).map((item) => (
@@ -439,12 +453,13 @@ function App() {
               );
               // 标签页
               if (comp.type === 'tabs') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                <div key={comp.id} data-tabs style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
                   <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb' }}>
-                    <div style={{ padding: '12px 20px', borderBottom: '2px solid #3b82f6', color: '#3b82f6', fontWeight: 'bold' }}>标签1</div>
-                    <div style={{ padding: '12px 20px', color: '#6b7280' }}>标签2</div>
+                    <div data-tab style={{ padding: '12px 20px', borderBottom: '2px solid #3b82f6', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer' }}>标签1</div>
+                    <div data-tab style={{ padding: '12px 20px', color: '#6b7280', cursor: 'pointer' }}>标签2</div>
                   </div>
-                  <div style={{ padding: 16 }}>内容1</div>
+                  <div data-tab-content style={{ padding: 16, display: 'block' }}>内容1</div>
+                  <div data-tab-content style={{ padding: 16, display: 'none' }}>内容2</div>
                 </div>
               );
               // 时间线
@@ -526,6 +541,133 @@ function App() {
               return null;
             })}
           </div>
+          {/* 预览交互脚本 */}
+          <script dangerouslySetInnerHTML={{__html: `
+            (function() {
+              // 画板交互
+              document.querySelectorAll('[data-drawing]').forEach(function(container) {
+                var canvas = container.querySelector('canvas');
+                if (!canvas) return;
+                var ctx = canvas.getContext('2d');
+                var drawing = false;
+                var mode = 'pen';
+                var lastX = 0, lastY = 0;
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                
+                function getPos(e) {
+                  var rect = canvas.getBoundingClientRect();
+                  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                }
+                
+                canvas.addEventListener('mousedown', function(e) {
+                  drawing = true;
+                  var pos = getPos(e);
+                  lastX = pos.x;
+                  lastY = pos.y;
+                });
+                
+                canvas.addEventListener('mousemove', function(e) {
+                  if (!drawing) return;
+                  var pos = getPos(e);
+                  ctx.beginPath();
+                  ctx.moveTo(lastX, lastY);
+                  ctx.lineTo(pos.x, pos.y);
+                  ctx.strokeStyle = mode === 'eraser' ? '#fafafa' : (container.querySelector('input[type="color"]')?.value || '#000');
+                  ctx.lineWidth = mode === 'eraser' ? 20 : parseInt(container.querySelector('input[type="range"]')?.value || 3);
+                  ctx.lineCap = 'round';
+                  ctx.stroke();
+                  lastX = pos.x;
+                  lastY = pos.y;
+                });
+                
+                canvas.addEventListener('mouseup', function() { drawing = false; });
+                canvas.addEventListener('mouseout', function() { drawing = false; });
+                
+                container.querySelectorAll('button').forEach(function(btn) {
+                  btn.addEventListener('click', function() {
+                    if (btn.textContent.includes('画笔')) mode = 'pen';
+                    else if (btn.textContent.includes('橡皮')) mode = 'eraser';
+                    else if (btn.textContent.includes('清空')) ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  });
+                });
+              });
+              
+              // 清单交互
+              document.querySelectorAll('[data-checklist]').forEach(function(div) {
+                div.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+                  cb.addEventListener('change', function() {
+                    var span = cb.nextElementSibling;
+                    span.style.textDecoration = cb.checked ? 'line-through' : 'none';
+                    span.style.color = cb.checked ? '#9ca3af' : '#374151';
+                  });
+                });
+              });
+              
+              // 标签页交互
+              document.querySelectorAll('[data-tabs]').forEach(function(div) {
+                var headers = div.querySelectorAll('[data-tab]');
+                var contents = div.querySelectorAll('[data-tab-content]');
+                headers.forEach(function(h, i) {
+                  h.addEventListener('click', function() {
+                    headers.forEach(function(th, j) {
+                      th.style.borderBottom = j === i ? '2px solid #3b82f6' : 'none';
+                      th.style.color = j === i ? '#3b82f6' : '#6b7280';
+                      th.style.fontWeight = j === i ? 'bold' : 'normal';
+                    });
+                    contents.forEach(function(c, j) {
+                      c.style.display = j === i ? 'block' : 'none';
+                    });
+                  });
+                });
+              });
+              
+              // 选择题交互
+              document.querySelectorAll('[data-choice]').forEach(function(div) {
+                var opts = div.querySelectorAll('[data-option]');
+                var result = div.querySelector('[data-result]');
+                opts.forEach(function(opt, i) {
+                  opt.addEventListener('click', function() {
+                    opts.forEach(function(o) {
+                      o.style.backgroundColor = '#fff';
+                      o.style.borderColor = '#e5e7eb';
+                    });
+                    var isCorrect = opt.dataset.correct === 'true';
+                    opt.style.backgroundColor = isCorrect ? '#d1fae5' : '#fee2e2';
+                    opt.style.borderColor = isCorrect ? '#059669' : '#dc2626';
+                    result.innerHTML = isCorrect ? '<span style="color:#059669">✓ 回答正确！</span>' : '<span style="color:#dc2626">✗ 回答错误，再试试！</span>';
+                  });
+                });
+              });
+              
+              // 填空题交互
+              document.querySelectorAll('[data-fillblank]').forEach(function(div) {
+                var btn = div.querySelector('[data-check]');
+                var input = div.querySelector('input[type="text"]');
+                var result = div.querySelector('[data-result]');
+                btn.addEventListener('click', function() {
+                  result.innerHTML = input.value ? '<span style="color:#3b82f6">答案已提交: ' + input.value + '</span>' : '<span style="color:#dc2626">请输入答案</span>';
+                });
+              });
+              
+              // 判断题交互
+              document.querySelectorAll('[data-truefalse]').forEach(function(div) {
+                var btns = div.querySelectorAll('button');
+                var result = div.querySelector('[data-result]');
+                btns.forEach(function(btn, i) {
+                  btn.addEventListener('click', function() {
+                    btns.forEach(function(b) {
+                      b.style.backgroundColor = '#fff';
+                      b.style.borderColor = '#e5e7eb';
+                    });
+                    btn.style.backgroundColor = '#dbeafe';
+                    btn.style.borderColor = '#3b82f6';
+                    result.innerHTML = i === 0 ? '<span style="color:#059669">✓ 正确！</span>' : '<span style="color:#dc2626">✗ 错误！</span>';
+                  });
+                });
+              });
+            })();
+          `}} />
         </div>
       </div>
     );
