@@ -1,7 +1,7 @@
 import { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import type { WidgetProps, ComponentPanelItem } from './types';
-import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move } from 'lucide-react';
+import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload } from 'lucide-react';
 
 interface GridSettings {
   dotSize: number;
@@ -84,6 +84,41 @@ function App() {
     const b = new Blob([html], { type: 'text/html' });
     const u = URL.createObjectURL(b);
     const a = document.createElement('a'); a.href = u; a.download = 'my-page.html'; a.click();
+  };
+
+  const handleSave = () => {
+    const projectData = {
+      version: '1.0',
+      components,
+      gridSettings,
+      savedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'codemypage-project.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.components) {
+          setComponents(data.components);
+          setSelectedId(null);
+        }
+        if (data.gridSettings) {
+          setGridSettings(data.gridSettings);
+        }
+      } catch {
+        alert('文件格式错误');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleWidgetDragStart = (e: React.MouseEvent, id: string) => {
@@ -320,6 +355,8 @@ function App() {
               <button onClick={() => setZoom(Math.min(200, zoom + 25))} className="px-2 py-1 text-gray-600 hover:text-gray-800 font-bold">+</button>
             </div>
             <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
+            <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
+            <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
           </div>
         </div>
