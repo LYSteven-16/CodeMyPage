@@ -1,4 +1,4 @@
-import React, { useState, useRef, forwardRef } from 'react';
+import React, { useState, useRef, forwardRef, useEffect } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import type { WidgetProps, ComponentPanelItem } from './types';
@@ -341,8 +341,76 @@ function App() {
   if (showPreview) {
     const previewHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
     
-    // 为预览生成唯一ID
-    const previewId = 'preview-' + Date.now();
+    // 注入预览交互脚本（仅在客户端执行）
+    useEffect(() => {
+      const script = document.createElement('script');
+      script.textContent = `
+        (function() {
+          // 画板交互
+          document.querySelectorAll('[data-drawing]').forEach(function(container) {
+            var canvas = container.querySelector('canvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var drawing = false;
+            var mode = 'pen';
+            var lastX = 0, lastY = 0;
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            function getPos(e) {
+              var rect = canvas.getBoundingClientRect();
+              return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            }
+            canvas.addEventListener('mousedown', function(e) {
+              drawing = true;
+              var pos = getPos(e);
+              lastX = pos.x;
+              lastY = pos.y;
+            });
+            canvas.addEventListener('mousemove', function(e) {
+              if (!drawing) return;
+              var pos = getPos(e);
+              ctx.beginPath();
+              ctx.moveTo(lastX, lastY);
+              ctx.lineTo(pos.x, pos.y);
+              ctx.strokeStyle = mode === 'eraser' ? '#fafafa' : '#000';
+              ctx.lineWidth = mode === 'eraser' ? 20 : 3;
+              ctx.lineCap = 'round';
+              ctx.stroke();
+              lastX = pos.x;
+              lastY = pos.y;
+            });
+            canvas.addEventListener('mouseup', function() { drawing = false; });
+            canvas.addEventListener('mouseout', function() { drawing = false; });
+          });
+          
+          // 清单交互
+          document.querySelectorAll('[data-checklist]').forEach(function(div) {
+            div.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+              cb.addEventListener('change', function() {
+                var span = cb.nextElementSibling;
+                span.style.textDecoration = cb.checked ? 'line-through' : 'none';
+                span.style.color = cb.checked ? '#9ca3af' : '#374151';
+              });
+            });
+          });
+          
+          // 标签页交互
+          document.querySelectorAll('[data-tabs]').forEach(function(div) {
+            var headers = div.querySelectorAll('[data-tab]');
+            headers.forEach(function(h, i) {
+              h.addEventListener('click', function() {
+                headers.forEach(function(th, j) {
+                  th.style.borderBottom = j === i ? '2px solid #3b82f6' : 'none';
+                  th.style.color = j === i ? '#3b82f6' : '#6b7280';
+                });
+              });
+            });
+          });
+        })();
+      `;
+      document.body.appendChild(script);
+      return () => { document.body.removeChild(script); };
+    }, []);
     
     return (
       <div className="min-h-screen" style={{ backgroundColor: gridSettings.dotGridBackground }}>
@@ -351,7 +419,7 @@ function App() {
           <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-200 rounded-lg">返回编辑</button>
         </div>
         <div className="py-8 px-4 flex justify-center">
-          <div id={previewId} style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, borderRadius: gridSettings.canvasBorderRadius, margin: '0 auto' }}>
+          <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: previewHeight, backgroundColor: gridSettings.canvasBackground, borderRadius: gridSettings.canvasBorderRadius, margin: '0 auto' }}>
             {components.map(comp => {
               const width = comp.width || 300;
               const height = comp.height || 200;
