@@ -217,6 +217,45 @@ export function ComponentEditor({ component, onUpdate, onClose }: Props) {
             <PropertyTextarea label="提示内容" value={component.alertContent || ''} onChange={(v) => onUpdate({ alertContent: v })} rows={2} />
           </>
         );
+      case 'answerSheet':
+        return (
+          <>
+            <PropertyInput label="总题数" type="number" value={component.totalQuestions || 10} onChange={(v) => onUpdate({ totalQuestions: parseInt(v) })} />
+            <PropertyInput label="已答题号" value={(component.answeredQuestions || []).join(', ')} onChange={(v) => onUpdate({ answeredQuestions: v.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)) })} placeholder="用逗号分隔，如：1,2,3" />
+            <PropertyInput label="标记题号" value={(component.markedQuestions || []).join(', ')} onChange={(v) => onUpdate({ markedQuestions: v.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)) })} placeholder="用逗号分隔，如：4,5" />
+            <PropertySelect label="显示状态" value={component.questionStatus || 'all'} options={[
+              { value: 'all', label: '全部' },
+              { value: 'answered', label: '仅已答' },
+              { value: 'unanswered', label: '仅未答' },
+              { value: 'marked', label: '仅标记' }
+            ]} onChange={(v) => onUpdate({ questionStatus: v as 'all' | 'answered' | 'unanswered' | 'marked' })} />
+          </>
+        );
+      case 'answerExplanation':
+        return (
+          <>
+            <PropertyInput label="解析标题" value={component.explanationTitle || '答案解析'} onChange={(v) => onUpdate({ explanationTitle: v })} />
+            <PropertyTextarea label="解析内容" value={component.explanationContent || ''} onChange={(v) => onUpdate({ explanationContent: v })} rows={4} />
+            <PropertyTextarea label="相关问题" value={component.relatedQuestion || ''} onChange={(v) => onUpdate({ relatedQuestion: v })} rows={2} />
+            <PropertySelect label="难度等级" value={component.difficulty || 'medium'} options={[
+              { value: 'easy', label: '简单' },
+              { value: 'medium', label: '中等' },
+              { value: 'hard', label: '困难' }
+            ]} onChange={(v) => onUpdate({ difficulty: v as 'easy' | 'medium' | 'hard' })} />
+            <PropertyToggle label="显示提示" checked={component.showTip || false} onChange={(v) => onUpdate({ showTip: v })} />
+            <PropertyTextarea label="提示内容" value={component.tipText || ''} onChange={(v) => onUpdate({ tipText: v })} rows={2} />
+          </>
+        );
+      case 'scoreDisplay':
+        return (
+          <>
+            <PropertyInput label="得分" type="number" value={component.score || 0} onChange={(v) => onUpdate({ score: parseInt(v) })} />
+            <PropertyInput label="总分" type="number" value={component.totalScore || 100} onChange={(v) => onUpdate({ totalScore: parseInt(v) })} />
+            <PropertyToggle label="显示百分比" checked={component.percentage !== false} onChange={(v) => onUpdate({ percentage: v })} />
+            <PropertyToggle label="显示等级" checked={component.showGrade || false} onChange={(v) => onUpdate({ showGrade: v })} />
+            <PropertyTextarea label="反馈消息" value={component.feedbackMessage || ''} onChange={(v) => onUpdate({ feedbackMessage: v })} rows={2} />
+          </>
+        );
       case 'accordion':
         return (
           <>
