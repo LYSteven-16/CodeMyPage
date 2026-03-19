@@ -81,9 +81,9 @@ function App() {
         case 'image':
           return `<img src="${comp.src || ''}" style="width:${width}px;height:${height}px;position:absolute;left:${left}px;top:${top}px;border-radius:${comp.borderRadius || 0}px;object-fit:cover">`;
         case 'button':
-          return `<div style="background-color:${comp.bgColor || '#3b82f6'};color:${comp.textColor || '#fff'};border-radius:${comp.borderRadius || 8}px;padding:12px 24px;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:flex;align-items:center;justify-content:center">${comp.buttonText || '按钮'}</div>`;
+          return comp.link ? `<a href="${comp.link}" ${comp.openNewTab ? 'target="_blank"' : ''} style="display:block;background-color:${comp.bgColor || '#3b82f6'};color:${comp.textColor || '#fff'};border-radius:${comp.borderRadius || 8}px;padding:12px 24px;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:flex;align-items:center;justify-content:center;text-decoration:none">${comp.buttonText || '按钮'}</a>` : `<div style="background-color:${comp.bgColor || '#3b82f6'};color:${comp.textColor || '#fff'};border-radius:${comp.borderRadius || 8}px;padding:12px 24px;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:flex;align-items:center;justify-content:center;cursor:pointer">${comp.buttonText || '按钮'}</div>`;
         case 'card':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'}">` : ''}<div style="padding:16px;height:40%;display:flex;flex-direction:column"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></div>`;
+          return comp.link ? `<a href="${comp.link}" ${comp.openNewTab ? 'target="_blank"' : ''} style="display:block;text-decoration:none;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'}">` : ''}<div style="padding:16px;height:40%;display:flex;flex-direction:column"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></a>` : `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'}">` : ''}<div style="padding:16px;height:40%;display:flex;flex-direction:column"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></div>`;
         case 'accordion':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden" id="accordion-${comp.id}"><div onclick="toggleAccordion('${comp.id}')" style="padding:16px;background:${comp.accordionTitleColor || '#f3f4f6'};font-weight:bold;cursor:pointer;display:flex;justify-content:space-between;align-items:center">${comp.accordionTitle || '点击展开'}<span id="accordion-icon-${comp.id}" style="transition:transform 0.2s">▼</span></div><div id="accordion-content-${comp.id}" style="padding:16px;color:${comp.accordionContentColor || '#374151'};max-height:0;overflow:hidden;transition:max-height 0.3s">${comp.accordionContent || '隐藏内容'}</div></div><script>window.toggleAccordion=function(id){var c=document.getElementById('accordion-content-'+id),i=document.getElementById('accordion-icon-'+id);c.style.maxHeight=c.style.maxHeight==='0px'||c.style.maxHeight===''?c.scrollHeight+'px':'0';i.style.transform=c.style.maxHeight==='0px'||c.style.maxHeight===''?'rotate(180deg)':'rotate(0)';};</script>`;
         case 'quiz':
@@ -95,7 +95,7 @@ function App() {
         case 'trueFalse':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="truefalse-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.statement || '判断题'}</div><div style="display:flex;gap:12"><button onclick="answerTrueFalse('${comp.id}',true,this)" style="padding:8px 24px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">√ 正确</button><button onclick="answerTrueFalse('${comp.id}',false,this)" style="padding:8px 24px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">× 错误</button></div><div id="truefalse-result-${comp.id}" style="margin-top:12px"></div></div><script>window.answerTrueFalse=function(id,answer,btn){var result=document.getElementById('truefalse-result-'+id);btn.style.background='#dbeafe';btn.style.borderColor='#3b82f6';result.innerHTML=answer?'<span style="color:#059669">✓ 正确！</span>':'<span style="color:#dc2626">✗ 错误！</span>';};</script>`;
         case 'sortable':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px"><div style="font-weight:bold;margin-bottom:12px">排序题</div><div style="display:flex;flex-direction:column;gap:8"><div style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:grab">☰ 项目1</div><div style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:grab">☰ 项目2</div><div style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:grab">☰ 项目3</div></div></div>`;
+          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="sortable-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.title || '排序题'}</div><div id="sortable-list-${comp.id}" style="display:flex;flex-direction:column;gap:8"><div style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:grab;display:flex;align-items:center;gap:8"><span>☰</span><span>项目1</span></div><div style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:grab;display:flex;align-items:center;gap:8"><span>☰</span><span>项目2</span></div><div style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:grab;display:flex;align-items:center;gap:8"><span>☰</span><span>项目3</span></div></div></div><script>(function(){var list=document.getElementById('sortable-list-${comp.id}'),items=list.querySelectorAll('div');items.forEach(function(item,i){item.draggable=true;item.dataset.index=i;item.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',i);item.style.background='#e0f2fe';});item.addEventListener('dragover',function(e){e.preventDefault();});item.addEventListener('drop',function(e){e.preventDefault();var from=e.dataTransfer.getData('text/plain'),to=i;if(from!==to){var arr=Array.from(list.children);var f=arr[from],t=arr[to];list.insertBefore(f,to<from?t.nextSibling:t);arr=Array.from(list.children);arr.forEach(function(x){x.style.background='#fff';});}});item.addEventListener('dragend',function(){items.forEach(function(x){x.style.background='#fff';});});});})();</script>`;
         case 'drawing':
           return `<div id="drawing-${comp.id}" style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column"><div style="display:flex;gap:8;padding:8px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;align-items:center"><button onclick="setDrawMode('${comp.id}','pen')" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">✏️ 画笔</button><button onclick="setDrawMode('${comp.id}','eraser')" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">🧹 橡皮</button><button onclick="clearDrawing('${comp.id}')" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">🗑️ 清空</button><input type="color" id="color-${comp.id}" value="${comp.brushColor || '#000000'}" style="width:30px;height:30px;border:none;cursor:pointer"><input type="range" id="size-${comp.id}" min="1" max="20" value="${comp.brushSize || 3}" style="width:80px"></div><canvas id="canvas-${comp.id}" style="flex:1;cursor:crosshair;background:#fafafa"></canvas></div><script>(function(){var c=document.getElementById('canvas-${comp.id}'),ctx=c.getContext('2d'),drawing=false,mode='pen',lastX=0,lastY=0;c.width=c.offsetWidth;c.height=c.offsetHeight;function draw(e){if(!drawing)return;var rect=c.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(x,y);ctx.strokeStyle=mode==='eraser'?'#fafafa':document.getElementById('color-${comp.id}').value;ctx.lineWidth=mode==='eraser'?20:parseInt(document.getElementById('size-${comp.id}').value);ctx.lineCap='round';ctx.stroke();lastX=x;lastY=y;}c.addEventListener('mousedown',function(e){drawing=true;var rect=c.getBoundingClientRect();lastX=e.clientX-rect.left;lastY=e.clientY-rect.top;});c.addEventListener('mousemove',draw);c.addEventListener('mouseup',function(){drawing=false;});c.addEventListener('mouseout',function(){drawing=false;});window.setDrawMode=function(id,m){mode=m;};window.clearDrawing=function(){ctx.clearRect(0,0,c.width,c.height);};})();</script>`;
         case 'checklist':
@@ -105,7 +105,7 @@ function App() {
         case 'timeline':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px"><div style="font-weight:bold;margin-bottom:12px">${comp.title || '时间线'}</div><div style="display:flex;flex-direction:column;gap:12;border-left:2px solid #e5e7eb;padding-left:16px"><div style="position:relative"><div style="width:12px;height:12px;border-radius:50%;background:#3b82f6;position:absolute;left:-21px;top:4px"></div><div style="font-weight:bold;color:#1f2937">步骤1</div></div><div style="position:relative"><div style="width:12px;height:12px;border-radius:50%;background:#d1d5db;position:absolute;left:-21px;top:4px"></div><div style="color:#6b7280">步骤2</div></div></div></div>`;
         case 'progress':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:bold">进度</span><span style="color:#6b7280">50%</span></div><div style="width:100%;height:8px;background:#e5e7eb;border-radius:4px"><div style="width:50%;height:100%;background:#3b82f6;border-radius:4px"></div></div></div>`;
+          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="progress-${comp.id}"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:bold">${comp.title || '进度'}</span><span id="progress-text-${comp.id}" style="color:#6b7280">${comp.progress || 50}%</span></div><input type="range" min="0" max="100" value="${comp.progress || 50}" oninput="document.getElementById('progress-text-${comp.id}').innerText=this.value+'%';this.previousElementSibling.querySelector('div').style.width=this.value+'%'" style="width:100%;height:8px;-webkit-appearance:none;background:#e5e7eb;border-radius:4px;outline:none"><div style="width:${comp.progress || 50}%;height:8px;background:${comp.progressColor || '#3b82f6'};border-radius:4px;margin-top:-8px;pointer-events:none"></div></div>`;
         case 'video':
           return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#000;border-radius:${comp.borderRadius || 8}px;overflow:hidden"><video src="${comp.src || ''}" style="width:100%;height:100%;object-fit:cover" controls></video></div>`;
         case 'audio':
@@ -359,16 +359,42 @@ function App() {
               if (comp.type === 'heading') return <div key={comp.id} style={{ ...style, color: comp.color, fontSize: comp.level === 'h1' ? '2.5rem' : '1.5rem' }}>{comp.text}</div>;
               if (comp.type === 'text') return <div key={comp.id} style={{ ...style, fontSize: comp.fontSize || 16, color: comp.color || '#374151' }}>{comp.content}</div>;
               if (comp.type === 'image') return <img key={comp.id} src={comp.src} alt={comp.alt} style={{ ...style, borderRadius: comp.borderRadius, objectFit: 'cover' }} />;
-              if (comp.type === 'button') return <div key={comp.id} style={{ ...style, backgroundColor: comp.bgColor, color: comp.textColor, borderRadius: comp.borderRadius, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{comp.buttonText}</div>;
-              if (comp.type === 'card') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  {comp.imageUrl && <img src={comp.imageUrl} alt="" style={{ width: '100%', height: '60%', objectFit: comp.imageFit || 'cover' }} />}
-                  <div style={{ padding: 16, height: '40%', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ fontSize: 18, fontWeight: 'bold', color: comp.titleColor || '#1f2937', marginBottom: 8 }}>{comp.title || '卡片标题'}</div>
-                    <div style={{ fontSize: 14, color: comp.descColor || '#6b7280' }}>{comp.description || '卡片描述'}</div>
+              if (comp.type === 'button') {
+                const handleClick = () => {
+                  if (comp.link) {
+                    window.open(comp.link, comp.openNewTab ? '_blank' : '_self');
+                  }
+                };
+                return comp.link ? (
+                  <a key={comp.id} href={comp.link} target={comp.openNewTab ? '_blank' : undefined} style={{ ...style, backgroundColor: comp.bgColor, color: comp.textColor, borderRadius: comp.borderRadius, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>{comp.buttonText}</a>
+                ) : (
+                  <div key={comp.id} onClick={handleClick} style={{ ...style, backgroundColor: comp.bgColor, color: comp.textColor, borderRadius: comp.borderRadius, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>{comp.buttonText}</div>
+                );
+              }
+              if (comp.type === 'card') {
+                const handleClick = () => {
+                  if (comp.link) {
+                    window.open(comp.link, comp.openNewTab ? '_blank' : '_self');
+                  }
+                };
+                return comp.link ? (
+                  <a key={comp.id} href={comp.link} target={comp.openNewTab ? '_blank' : undefined} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', textDecoration: 'none' }}>
+                    {comp.imageUrl && <img src={comp.imageUrl} alt="" style={{ width: '100%', height: '60%', objectFit: comp.imageFit || 'cover' }} />}
+                    <div style={{ padding: 16, height: '40%', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ fontSize: 18, fontWeight: 'bold', color: comp.titleColor || '#1f2937', marginBottom: 8 }}>{comp.title || '卡片标题'}</div>
+                      <div style={{ fontSize: 14, color: comp.descColor || '#6b7280' }}>{comp.description || '卡片描述'}</div>
+                    </div>
+                  </a>
+                ) : (
+                  <div key={comp.id} onClick={handleClick} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    {comp.imageUrl && <img src={comp.imageUrl} alt="" style={{ width: '100%', height: '60%', objectFit: comp.imageFit || 'cover' }} />}
+                    <div style={{ padding: 16, height: '40%', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ fontSize: 18, fontWeight: 'bold', color: comp.titleColor || '#1f2937', marginBottom: 8 }}>{comp.title || '卡片标题'}</div>
+                      <div style={{ fontSize: 14, color: comp.descColor || '#6b7280' }}>{comp.description || '卡片描述'}</div>
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              }
               if (comp.type === 'accordion') {
                 const [open, setOpen] = useState(false);
                 return (
@@ -424,16 +450,40 @@ function App() {
                 </div>
               );
               // 排序题
-              if (comp.type === 'sortable') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: 12 }}>排序题</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'grab' }}>☰ 项目1</div>
-                    <div style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'grab' }}>☰ 项目2</div>
-                    <div style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'grab' }}>☰ 项目3</div>
+              if (comp.type === 'sortable') {
+                const defaultItems = ['项目1', '项目2', '项目3'];
+                const [items, setItems] = useState<string[]>((comp as any).items || defaultItems);
+                const dragItem = useRef<number | null>(null);
+                const dragOverItem = useRef<number | null>(null);
+                const handleDragStart = (index: number) => {
+                  dragItem.current = index;
+                };
+                const handleDragEnter = (index: number) => {
+                  dragOverItem.current = index;
+                };
+                const handleDragEnd = () => {
+                  if (dragItem.current === null || dragOverItem.current === null) return;
+                  const newItems = [...items];
+                  const draggedItem = newItems[dragItem.current];
+                  newItems.splice(dragItem.current, 1);
+                  newItems.splice(dragOverItem.current, 0, draggedItem);
+                  setItems(newItems);
+                  dragItem.current = null;
+                  dragOverItem.current = null;
+                };
+                return (
+                  <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: 12 }}>{comp.title || '排序题'}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {items.map((item: string, i: number) => (
+                        <div key={i} draggable onDragStart={() => handleDragStart(i)} onDragEnter={() => handleDragEnter(i)} onDragEnd={handleDragEnd} onDragOver={(e) => e.preventDefault()} style={{ padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 6, cursor: 'grab', display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#fff' }}>
+                          <span>☰</span><span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              }
               // 画板
               if (comp.type === 'drawing') return (
                 <div key={comp.id} data-drawing style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -483,12 +533,16 @@ function App() {
                 </div>
               );
               // 进度条
-              if (comp.type === 'progress') return (
-                <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span style={{ fontWeight: 'bold' }}>进度</span><span style={{ color: '#6b7280' }}>50%</span></div>
-                  <div style={{ width: '100%', height: 8, backgroundColor: '#e5e7eb', borderRadius: 4 }}><div style={{ width: '50%', height: '100%', backgroundColor: '#3b82f6', borderRadius: 4 }}></div></div>
-                </div>
-              );
+              if (comp.type === 'progress') {
+                const [progress, setProgress] = useState(comp.progress || 50);
+                return (
+                  <div key={comp.id} style={{ ...style, backgroundColor: '#fff', borderRadius: comp.borderRadius || 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span style={{ fontWeight: 'bold' }}>{comp.title || '进度'}</span><span style={{ color: '#6b7280' }}>{progress}%</span></div>
+                    <input type="range" min="0" max="100" value={progress} onChange={(e) => setProgress(parseInt(e.target.value))} style={{ width: '100%', height: 8, WebkitAppearance: 'none', background: '#e5e7eb', borderRadius: 4, outline: 'none' }} />
+                    <div style={{ width: `${progress}%`, height: 8, backgroundColor: comp.progressColor || '#3b82f6', borderRadius: 4, marginTop: -8, pointerEvents: 'none' }}></div>
+                  </div>
+                );
+              }
               // 视频
               if (comp.type === 'video') return (
                 <div key={comp.id} style={{ ...style, backgroundColor: '#000', borderRadius: comp.borderRadius || 8, overflow: 'hidden' }}>
