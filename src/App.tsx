@@ -425,7 +425,7 @@ function App() {
         <div className="fixed bottom-6 right-6 z-50">
           <button 
             className="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg border cursor-pointer hover:bg-gray-50"
-            onClick={() => setShowGridSettings(!showGridSettings)}
+            onClick={(e) => { e.stopPropagation(); setShowGridSettings(!showGridSettings); }}
             title="画布设置"
           >
             <Grid3X3 size={22} />
