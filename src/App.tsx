@@ -423,13 +423,13 @@ function App() {
         )}
 
         <div className="fixed bottom-6 right-6 z-50">
-          <div 
-            className="flex items-center gap-2 px-3 py-2 bg-white rounded-full shadow-lg border cursor-pointer"
+          <button 
+            className="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg border cursor-pointer hover:bg-gray-50"
             onClick={() => setShowGridSettings(!showGridSettings)}
+            title="画布设置"
           >
-            <Grid3X3 size={18} />
-            <span className="text-sm">网格</span>
-          </div>
+            <Grid3X3 size={22} />
+          </button>
           {showGridSettings && (
             <div className="absolute bottom-full mb-2 right-0 bg-white rounded-xl shadow-lg border p-4 w-72" onClick={(e) => e.stopPropagation()}>
               <div className="space-y-3">
