@@ -8,6 +8,8 @@ interface GridSettings {
   dotColor: string;
   dotSpacing: number;
   snapToGrid: boolean;
+  canvasBackground: string;
+  dotGridBackground: string;
 }
 
 const CANVAS_WIDTH = 1000;
@@ -30,10 +32,13 @@ function App() {
     dotSize: 2,
     dotColor: '#c0c0c0',
     dotSpacing: 20,
-    snapToGrid: true
+    snapToGrid: true,
+    canvasBackground: '#ffffff',
+    dotGridBackground: '#f3f4f6'
   });
 
   const gridBackground = {
+    backgroundColor: gridSettings.dotGridBackground,
     backgroundImage: `radial-gradient(circle, ${gridSettings.dotColor} ${gridSettings.dotSize}px, transparent ${gridSettings.dotSize}px)`,
     backgroundSize: `${gridSettings.dotSpacing}px ${gridSettings.dotSpacing}px`
   };
@@ -370,6 +375,7 @@ function App() {
             onSelect={setSelectedId} 
             onDelete={handleDelete} 
             gridBackground={gridBackground}
+            canvasBackground={gridSettings.canvasBackground}
             zoom={zoom}
             onDoubleClick={handleDoubleClick}
             onDragStart={handleWidgetDragStart}
@@ -437,6 +443,27 @@ function App() {
               />
               <span className="w-8 text-xs">{gridSettings.dotSpacing}px</span>
             </div>
+            <div className="w-px h-4 bg-gray-300" />
+            <div className="flex items-center gap-1 text-sm">
+              <span>画布:</span>
+              <input 
+                type="color" 
+                value={gridSettings.canvasBackground} 
+                onChange={(e) => handleGridChange({ canvasBackground: e.target.value })}
+                className="w-6 h-6 rounded cursor-pointer border-0"
+                title="画布背景色"
+              />
+            </div>
+            <div className="flex items-center gap-1 text-sm">
+              <span>网格:</span>
+              <input 
+                type="color" 
+                value={gridSettings.dotGridBackground} 
+                onChange={(e) => handleGridChange({ dotGridBackground: e.target.value })}
+                className="w-6 h-6 rounded cursor-pointer border-0"
+                title="网格背景色"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -450,6 +477,7 @@ const WorkArea = forwardRef<HTMLDivElement, any>(({
   onSelect, 
   
   gridBackground,
+  canvasBackground,
   zoom = 100,
   onDoubleClick,
   onDragStart,
@@ -477,8 +505,8 @@ const WorkArea = forwardRef<HTMLDivElement, any>(({
     >
       <div 
         ref={canvasRef}
-        className="relative bg-white mx-auto" 
-        style={{ width: CANVAS_WIDTH, minHeight: canvasHeight, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zoom: `${zoom}%` }}
+        className="relative mx-auto" 
+        style={{ width: CANVAS_WIDTH, minHeight: canvasHeight, backgroundColor: canvasBackground, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zoom: `${zoom}%` }}
       >
         {components.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-gray-400">
