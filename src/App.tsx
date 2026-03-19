@@ -1,6 +1,7 @@
 import React, { useState, useRef, forwardRef } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
+import { PreviewPage } from './PreviewPage';
 import type { WidgetProps, ComponentPanelItem } from './types';
 import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload } from 'lucide-react';
 
@@ -18,6 +19,12 @@ const CANVAS_WIDTH = 1000;
 const CANVAS_MIN_HEIGHT = 1600;
 
 function App() {
+  // 检测是否是预览模式
+  const isPreviewMode = window.location.pathname === '/preview';
+  if (isPreviewMode) {
+    return <PreviewPage />;
+  }
+  
   const [components, setComponents] = useState< WidgetProps[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -474,7 +481,13 @@ function App() {
               )}
             </div>
 
-            <button onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
+            <button onClick={() => {
+              // 保存数据到sessionStorage
+              sessionStorage.setItem('previewComponents', JSON.stringify(components));
+              sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
+              // 打开新标签页
+              window.open('/preview', '_blank');
+            }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
             <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
             <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
