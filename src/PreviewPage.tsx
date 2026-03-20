@@ -37,7 +37,7 @@ export function PreviewPage() {
             width: comp.width || 300,
             height: comp.height || 200
           };
-          return <ComponentRenderer key={comp.id} component={comp} style={style} />;
+          return <ComponentRenderer key={comp.id} component={comp} style={style} mode="preview" />;
         })}
       </div>
     </div>

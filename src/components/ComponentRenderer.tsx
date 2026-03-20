@@ -12,6 +12,7 @@ import {
   TrueFalseRenderer,
   SortableRenderer,
   DrawingRenderer,
+  DrawingPreviewRenderer,
   ChecklistRenderer,
   TabsRenderer,
   TimelineRenderer,
@@ -32,9 +33,17 @@ import {
 interface Props {
   component: WidgetProps;
   style: React.CSSProperties;
+  mode?: 'edit' | 'preview';
 }
 
-export function ComponentRenderer({ component, style }: Props) {
+export function ComponentRenderer({ component, style, mode = 'edit' }: Props) {
+  const renderDrawing = () => {
+    if (mode === 'preview') {
+      return <DrawingPreviewRenderer component={component} style={style} />;
+    }
+    return <DrawingRenderer component={component} style={style} />;
+  };
+  
   switch (component.type) {
     case 'heading':
       return <HeadingRenderer component={component} style={style} />;
@@ -59,7 +68,7 @@ export function ComponentRenderer({ component, style }: Props) {
     case 'sortable':
       return <SortableRenderer component={component} style={style} />;
     case 'drawing':
-      return <DrawingRenderer component={component} style={style} />;
+      return renderDrawing();
     case 'checklist':
       return <ChecklistRenderer component={component} style={style} />;
     case 'tabs':

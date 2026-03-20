@@ -179,6 +179,7 @@ function App() {
   };
 
   const handleWidgetDragStart = (e: React.MouseEvent, id: string) => {
+    if (editingComponent) return;
     setSelectedId(id);
     setIsDragging(true);
     const component = components.find(c => c.id === id);
@@ -332,9 +333,24 @@ function App() {
   const renderEditModal = () => {
     if (!editingComponent) return null;
     
+    const handleCloseWithSave = () => {
+      if (editingComponent) {
+        handleUpdateProperty(editingComponent.id, { [editingComponent.field]: editingComponent.value });
+        setEditingComponent(null);
+      }
+    };
+    
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setEditingComponent(null)}>
-        <div className="bg-white rounded-xl p-6 w-96 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div 
+        className="fixed inset-0 bg-black/50 flex items-center justify-center" 
+        style={{ zIndex: 9999 }}
+        onClick={handleCloseWithSave}
+      >
+        <div 
+          className="bg-white rounded-xl p-6 w-96 shadow-2xl" 
+          style={{ zIndex: 10000 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <h3 className="text-lg font-semibold mb-4">编辑文字</h3>
           <textarea
             value={editingComponent.value}
