@@ -1,10 +1,13 @@
 import React, { useState, useRef, forwardRef } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import { ComponentRenderer } from './components/ComponentRenderer';
 import { PreviewPage } from './PreviewPage';
 import type { WidgetProps, ComponentPanelItem } from './types';
-import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload } from 'lucide-react';
+import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload, X, AlertTriangle, Zap, FileText, Github } from 'lucide-react';
+
+type ExportOption = 'interactive' | 'github' | 'static';
 
 interface GridSettings {
   dotSize: number;
@@ -34,6 +37,10 @@ function App() {
   const [showBgSettings, setShowBgSettings] = useState(false);
   const [showCanvasSettings, setShowCanvasSettings] = useState(false);
   const [showComponentEditor, setShowComponentEditor] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showStaticWarning, setShowStaticWarning] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const workAreaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -74,73 +81,184 @@ function App() {
     setSelectedId(newComponent.id);
   };
 
-  const generateHTML = () => {
-    const renderComponentHTML = (comp: WidgetProps): string => {
-      const left = comp.x || 0;
-      const top = comp.y || 0;
-      const width = comp.width || 300;
-      const height = comp.height || 200;
-      
-      switch (comp.type) {
-        case 'heading':
-          return `<div style="color:${comp.color || '#1f2937'};font-size:${comp.level === 'h1' ? '2.5rem' : '1.5rem'};font-weight:bold;position:absolute;left:${left}px;top:${top}px">${comp.text || ''}</div>`;
-        case 'text':
-          return `<div style="font-size:${comp.fontSize || 16}px;color:${comp.color || '#374151'};position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px">${comp.content || ''}</div>`;
-        case 'image':
-          return `<img src="${comp.src || ''}" draggable="false" ondragstart="return false" style="width:${width}px;height:${height}px;position:absolute;left:${left}px;top:${top}px;border-radius:${comp.borderRadius || 0}px;object-fit:cover;user-select:none">`;
-        case 'button':
-          return comp.link ? `<a href="${comp.link}" ${comp.openNewTab ? 'target="_blank"' : ''} style="display:block;background-color:${comp.bgColor || '#3b82f6'};color:${comp.textColor || '#fff'};border-radius:${comp.borderRadius || 8}px;padding:12px 24px;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:flex;align-items:center;justify-content:center;text-decoration:none">${comp.buttonText || '按钮'}</a>` : `<div style="background-color:${comp.bgColor || '#3b82f6'};color:${comp.textColor || '#fff'};border-radius:${comp.borderRadius || 8}px;padding:12px 24px;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:flex;align-items:center;justify-content:center;cursor:pointer">${comp.buttonText || '按钮'}</div>`;
-        case 'card':
-          return comp.link ? `<a href="${comp.link}" ${comp.openNewTab ? 'target="_blank"' : ''} style="display:block;text-decoration:none;position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" draggable="false" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'};user-select:none">` : ''}<div style="padding:16px;height:40%;display:flex;flex-direction:column"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></a>` : `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 12}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column">${comp.imageUrl ? `<img src="${comp.imageUrl}" draggable="false" style="width:100%;height:60%;object-fit:${comp.imageFit || 'cover'};user-select:none">` : ''}<div style="padding:16px;height:40%;display:flex;flex-direction:column"><div style="font-size:18px;font-weight:bold;color:${comp.titleColor || '#1f2937'};margin-bottom:8px">${comp.title || ''}</div><div style="font-size:14px;color:${comp.descColor || '#6b7280'}">${comp.description || ''}</div></div></div>`;
-        case 'accordion':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;border:1px solid #e5e7eb" id="accordion-${comp.id}"><div onclick="toggleAccordion5('${comp.id}')" onmouseenter="this.style.backgroundColor='${comp.accordionTitleColor ? '#e8e8e8' : '#e5e7eb'}'" onmouseleave="this.style.backgroundColor='${comp.accordionTitleColor || '#f3f4f6'}'" id="accordion-header-${comp.id}" style="min-height:52px;padding:12px 16px;background:${comp.accordionTitleColor || '#f3f4f6'};cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background-color 0.2s ease;border-bottom:none"><span style="font-weight:600;font-size:15px;color:#1f2937;letter-spacing:0.01em">${comp.accordionTitle || '点击展开'}</span><div id="accordion-icon-${comp.id}" style="width:24px;height:24px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,0.1);transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);transform:rotate(0deg)"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#6b7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div><div id="accordion-content-${comp.id}" style="padding:0 16px;color:${comp.accordionContentColor || '#374151'};max-height:0;opacity:0;overflow:hidden;transition:max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),opacity 0.25s ease,padding 0.25s ease">${comp.accordionContent || '隐藏内容'}</div></div><script>(function(){window.toggleAccordion5=function(id){var c=document.getElementById('accordion-content-'+id),i=document.getElementById('accordion-icon-'+id),h=document.getElementById('accordion-header-'+id),w=document.getElementById('accordion-'+id);if(!c._collapsed){c.style.maxHeight='0';c.style.opacity='0';c.style.padding='0 16px';c._collapsed=true;i.style.transform='rotate(0deg)';h.style.borderBottom='none';w.style.zIndex='1';}else{c.style.maxHeight='500px';c.style.opacity='1';c.style.padding='16px';c._collapsed=false;i.style.transform='rotate(180deg)';h.style.borderBottom='1px solid #e5e7eb';w.style.zIndex='1000';}};})();</script>`;
-        case 'quiz':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="quiz-${comp.id}"><div style="font-weight:bold;color:${comp.questionColor || '#1f2937'};margin-bottom:12px">${comp.question || '问题'}</div><button onclick="showAnswer('${comp.id}')" id="quiz-btn-${comp.id}" style="padding:8px 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer">显示答案</button><div id="quiz-answer-${comp.id}" style="margin-top:12px;display:none;color:${comp.answerColor || '#059669'};background:#d1fae5;padding:12px;border-radius:4px">${comp.answer || '答案'}</div></div><script>window.showAnswer=function(id){document.getElementById('quiz-answer-'+id).style.display='block';document.getElementById('quiz-btn-'+id).style.display='none';};</script>`;
-        case 'choice':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="choice-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.question || '请选择'}</div><div style="display:flex;flex-direction:column;gap:8">${(comp.options || ['选项A','选项B']).map((opt, i) => `<div onclick="selectChoice('${comp.id}',this,${i===0})" style="padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer">${opt}</div>`).join('')}</div><div id="choice-result-${comp.id}" style="margin-top:12px"></div></div><script>window.selectChoice=function(id,el,isCorrect){var result=document.getElementById('choice-result-'+id);if(isCorrect){el.style.background='#d1fae5';el.style.borderColor='#059669';result.innerHTML='<span style="color:#059669">✓ 回答正确！</span>';}else{el.style.background='#fee2e2';el.style.borderColor='#dc2626';result.innerHTML='<span style="color:#dc2626">✗ 回答错误，再试试！</span>';}};</script>`;
-        case 'fillBlank':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px"><div style="font-weight:bold;margin-bottom:12px">填空题</div><input type="text" placeholder="请输入答案" id="fillblank-${comp.id}" style="width:100%;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:8px"><button onclick="checkFillBlank('${comp.id}')" style="padding:8px 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer">检查答案</button><div id="fillblank-result-${comp.id}" style="margin-top:8px"></div></div><script>window.checkFillBlank=function(id){var input=document.getElementById('fillblank-'+id),result=document.getElementById('fillblank-result-'+id);result.innerHTML=input.value?'<span style="color:#3b82f6">答案已提交: '+input.value+'</span>':'<span style="color:#dc2626">请输入答案</span>';};</script>`;
-        case 'trueFalse':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="truefalse-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.statement || '判断题'}</div><div style="display:flex;gap:12"><button onclick="answerTrueFalse('${comp.id}',true,this)" style="padding:8px 24px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">√ 正确</button><button onclick="answerTrueFalse('${comp.id}',false,this)" style="padding:8px 24px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer">× 错误</button></div><div id="truefalse-result-${comp.id}" style="margin-top:12px"></div></div><script>window.answerTrueFalse=function(id,answer,btn){var result=document.getElementById('truefalse-result-'+id);btn.style.background='#dbeafe';btn.style.borderColor='#3b82f6';result.innerHTML=answer?'<span style="color:#059669">✓ 正确！</span>':'<span style="color:#dc2626">✗ 错误！</span>';};</script>`;
-        case 'sortable':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="sortable-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.title || '排序题'}</div><div id="sortable-list-${comp.id}" style="display:flex;flex-direction:column;gap:8"><div class="s-item" style="padding:12px 16px;background:#fff;border:2px solid #e5e7eb;border-radius:8px;cursor:grab;display:flex;align-items:center;gap:12px"><span style="color:#9ca3af;font-size:16px">☰</span><span style="flex:1">项目1</span></div><div class="s-item" style="padding:12px 16px;background:#fff;border:2px solid #e5e7eb;border-radius:8px;cursor:grab;display:flex;align-items:center;gap:12px"><span style="color:#9ca3af;font-size:16px">☰</span><span style="flex:1">项目2</span></div><div class="s-item" style="padding:12px 16px;background:#fff;border:2px solid #e5e7eb;border-radius:8px;cursor:grab;display:flex;align-items:center;gap:12px"><span style="color:#9ca3af;font-size:16px">☰</span><span style="flex:1">项目3</span></div></div></div><script>(function(){var el=document.getElementById('sortable-${comp.id}');var list=el.querySelector('div');var items=list.querySelectorAll('.s-item');var drag=-1,ghost=null,lastY=0;items.forEach(function(item,i){item.addEventListener('mousedown',function(e){drag=i;var rect=item.getBoundingClientRect();ghost=document.createElement('div');ghost.textContent=item.textContent;ghost.style.cssText='position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;height:'+rect.height+'px;background:#eff6ff;border:2px solid #3b82f6;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;pointer-events:none;z-index:999;opacity:0.9';document.body.appendChild(ghost);lastY=e.clientY;items.forEach(function(x){x.style.opacity='1';x.style.transform='';});item.style.opacity='0.4';e.preventDefault();});});document.addEventListener('mousemove',function(e){if(drag<0||!ghost)return;var dy=e.clientY-lastY;ghost.style.top=parseInt(ghost.style.top)+dy+'px';lastY=e.clientY;var listRect=list.getBoundingClientRect();var mouseY=e.clientY;var newIdx=0;items.forEach(function(item,i){item.style.opacity='1';item.style.transform='';var rect=item.getBoundingClientRect();if(mouseY>rect.top+rect.height/2){newIdx=i+1;}});if(newIdx<=drag){items[drag].style.opacity='0.4';}else if(newIdx>drag){items[drag].style.opacity='0.4';}});document.addEventListener('mouseup',function(e){if(drag<0||!ghost)return;ghost.remove();ghost=null;var listRect=list.getBoundingClientRect();var mouseY=e.clientY;var newIdx=0;items.forEach(function(item,i){var rect=item.getBoundingClientRect();if(mouseY>rect.top+rect.height/2){newIdx=i+1;}});if(newIdx!==drag&&newIdx>drag){newIdx--;}if(newIdx!==drag){var moved=items[drag];list.insertBefore(moved,items[newIdx]);items=list.querySelectorAll('.s-item');}items.forEach(function(item){item.style.opacity='1';});drag=-1;});})();</script>`;
-        case 'drawing':
-          return `<div id="drawing-${comp.id}" style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden;display:flex;flex-direction:column"><div style="display:flex;gap:8;padding:8px;background:#f3f4f6;border-bottom:1px solid #e5e7eb;align-items:center"><button onclick="setDrawMode('${comp.id}','pen')" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">✏️ 画笔</button><button onclick="setDrawMode('${comp.id}','eraser')" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">🧹 橡皮</button><button onclick="clearDrawing('${comp.id}')" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer">🗑️ 清空</button><input type="color" id="color-${comp.id}" value="${comp.brushColor || '#000000'}" style="width:30px;height:30px;border:none;cursor:pointer"><input type="range" id="size-${comp.id}" min="1" max="20" value="${comp.brushSize || 3}" style="width:80px"></div><canvas id="canvas-${comp.id}" style="flex:1;cursor:crosshair;background:#fafafa"></canvas></div><script>(function(){var c=document.getElementById('canvas-${comp.id}'),ctx=c.getContext('2d'),drawing=false,mode='pen',lastX=0,lastY=0;c.width=c.offsetWidth;c.height=c.offsetHeight;function draw(e){if(!drawing)return;var rect=c.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(x,y);ctx.strokeStyle=mode==='eraser'?'#fafafa':document.getElementById('color-${comp.id}').value;ctx.lineWidth=mode==='eraser'?20:parseInt(document.getElementById('size-${comp.id}').value);ctx.lineCap='round';ctx.stroke();lastX=x;lastY=y;}c.addEventListener('mousedown',function(e){drawing=true;var rect=c.getBoundingClientRect();lastX=e.clientX-rect.left;lastY=e.clientY-rect.top;});c.addEventListener('mousemove',draw);c.addEventListener('mouseup',function(){drawing=false;});c.addEventListener('mouseout',function(){drawing=false;});window.setDrawMode=function(id,m){mode=m;};window.clearDrawing=function(){ctx.clearRect(0,0,c.width,c.height);};})();</script>`;
-        case 'checklist':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="checklist-${comp.id}"><div style="font-weight:bold;margin-bottom:12px">${comp.title || '待办清单'}</div><div style="display:flex;flex-direction:column;gap:8"><label style="display:flex;align-items:center;gap:8;cursor:pointer"><input type="checkbox" onchange="this.nextElementSibling.style.textDecoration=this.checked?'line-through':'none';this.nextElementSibling.style.color=this.checked?'#9ca3af':'#374151'" style="width:18px;height:18px"><span style="color:#374151">待办1</span></label><label style="display:flex;align-items:center;gap:8;cursor:pointer"><input type="checkbox" onchange="this.nextElementSibling.style.textDecoration=this.checked?'line-through':'none';this.nextElementSibling.style.color=this.checked?'#9ca3af':'#374151'" style="width:18px;height:18px"><span style="color:#374151">待办2</span></label></div></div>`;
-        case 'tabs':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden" id="tabs-${comp.id}"><div style="display:flex;border-bottom:1px solid #e5e7eb"><div onclick="switchTab('${comp.id}',0,this)" style="padding:12px 20px;border-bottom:2px solid #3b82f6;color:#3b82f6;font-weight:bold;cursor:pointer">标签1</div><div onclick="switchTab('${comp.id}',1,this)" style="padding:12px 20px;color:#6b7280;cursor:pointer">标签2</div></div><div id="tab-content-${comp.id}" style="padding:16px">内容1</div></div><script>window.switchTab=function(id,idx,el){var d=document.getElementById('tabs-'+id),cs=d.querySelectorAll('div[onclick]');cs.forEach(function(c,i){if(i<2){c.style.borderBottom=i===idx?'2px solid #3b82f6':'none';c.style.color=i===idx?'#3b82f6':'#6b7280';c.style.fontWeight=i===idx?'bold':'normal';}});var contents=['内容1','内容2'];document.getElementById('tab-content-'+id).innerHTML=contents[idx];};</script>`;
-        case 'timeline':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px"><div style="font-weight:bold;margin-bottom:12px">${comp.title || '时间线'}</div><div style="display:flex;flex-direction:column;gap:12;border-left:2px solid #e5e7eb;padding-left:16px"><div style="position:relative"><div style="width:12px;height:12px;border-radius:50%;background:#3b82f6;position:absolute;left:-21px;top:4px"></div><div style="font-weight:bold;color:#1f2937">步骤1</div></div><div style="position:relative"><div style="width:12px;height:12px;border-radius:50%;background:#d1d5db;position:absolute;left:-21px;top:4px"></div><div style="color:#6b7280">步骤2</div></div></div></div>`;
-        case 'progress':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px" id="progress-${comp.id}"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:bold">${comp.title || '进度'}</span><span id="progress-text-${comp.id}" style="color:#6b7280">${comp.progress || 50}%</span></div><input type="range" min="0" max="100" value="${comp.progress || 50}" oninput="document.getElementById('progress-text-${comp.id}').innerText=this.value+'%';this.previousElementSibling.querySelector('div').style.width=this.value+'%'" style="width:100%;height:8px;-webkit-appearance:none;background:#e5e7eb;border-radius:4px;outline:none"><div style="width:${comp.progress || 50}%;height:8px;background:${comp.progressColor || '#3b82f6'};border-radius:4px;margin-top:-8px;pointer-events:none"></div></div>`;
-        case 'video':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#000;border-radius:${comp.borderRadius || 8}px;overflow:hidden"><video src="${comp.src || ''}" style="width:100%;height:100%;object-fit:cover" controls></video></div>`;
-        case 'audio':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);padding:16px"><div style="display:flex;align-items:center;gap:12"><div style="width:48px;height:48px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center">🎵</div><div style="flex:1"><div style="font-weight:bold;margin-bottom:4px">音频标题</div><audio src="${comp.src || ''}" style="width:100%" controls></audio></div></div></div>`;
-        case 'quote':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#f9fafb;border-left:4px solid #3b82f6;padding:16px;border-radius:${comp.borderRadius || 8}px"><div style="font-size:16px;font-style:italic;color:#374151;margin-bottom:8px">"引用内容"</div><div style="font-size:14px;color:#6b7280;text-align:right">— 作者</div></div>`;
-        case 'code':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#1f2937;border-radius:${comp.borderRadius || 8}px;overflow:hidden;display:flex;flex-direction:column"><div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#111827;border-bottom:1px solid #374151"><span style="color:#9ca3af;font-size:12px">代码</span><button onclick="copyCode('${comp.id}')" style="padding:4px 8px;background:#374151;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px">复制</button></div><pre id="code-${comp.id}" style="flex:1;padding:16px;overflow:auto;color:#e5e7eb;font-size:14px;font-family:monospace;margin:0">${comp.code || '// 代码'}</pre></div><script>window.copyCode=function(id){navigator.clipboard.writeText(document.getElementById('code-'+id).innerText);alert('已复制到剪贴板！');};</script>`;
-        case 'table':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;background:#fff;border-radius:${comp.borderRadius || 8}px;box-shadow:0 2px 4px rgba(0,0,0,0.1);overflow:hidden"><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f9fafb"><th style="padding:12px;text-align:left;border-bottom:1px solid #e5e7eb;font-weight:bold">列1</th><th style="padding:12px;text-align:left;border-bottom:1px solid #e5e7eb;font-weight:bold">列2</th></tr></thead><tbody><tr><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容1</td><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容2</td></tr><tr style="background:#f9fafb"><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容3</td><td style="padding:12px;border-bottom:1px solid #e5e7eb">内容4</td></tr></tbody></table></div>`;
-        case 'tag':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;display:flex;gap:8;flex-wrap:wrap"><span style="padding:4px 12px;border-radius:16px;background:#dbeafe;color:#1e40af;font-size:14px">标签1</span><span style="padding:4px 12px;border-radius:16px;background:#d1fae5;color:#065f46;font-size:14px">标签2</span></div>`;
-        case 'alert':
-          return `<div style="position:absolute;left:${left}px;top:${top}px;width:${width}px;height:${height}px;padding:16px;border-radius:${comp.borderRadius || 8}px;background:#dbeafe;border-left:4px solid #3b82f6"><div style="font-weight:bold;margin-bottom:4px;color:#1e40af">提示</div><div style="color:#1e40af;font-size:14px">内容</div></div>`;
-        default: return '';
-      }
+  const renderComponentToHTML = (comp: WidgetProps): string => {
+    const style: React.CSSProperties = {
+      position: 'absolute',
+      left: comp.x || 0,
+      top: comp.y || 0,
+      width: comp.width || 300,
+      height: comp.height || 200
     };
-
-    const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
-    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${canvasHeight}px;border-radius:${gridSettings.canvasBorderRadius}px}</style></head><body><div class="page-container">${components.map(c => renderComponentHTML(c)).join('\n')}</div></body></html>`;
+    return renderToStaticMarkup(<ComponentRenderer component={comp} style={style} mode="preview" />);
   };
 
-  const handleExport = () => {
+  const INTERACTION_SCRIPTS = `
+    window.toggleAccordion=function(id){var h=document.getElementById('accordion-header-'+id),c=document.getElementById('accordion-content-'+id),i=document.getElementById('accordion-icon-'+id);if(!h||!c||!i)return;var collapsed=h.getAttribute('data-collapsed')==='true';if(collapsed){c.style.maxHeight=c.scrollHeight+'px';c.style.opacity='1';i.style.transform='rotate(180deg)';h.style.borderBottom='1px solid #e5e7eb';h.setAttribute('data-collapsed','false');}else{c.style.maxHeight='0';c.style.opacity='0';i.style.transform='rotate(0deg)';h.style.borderBottom='none';h.setAttribute('data-collapsed','true');}};
+    document.querySelectorAll('[id^="accordion-header-"]').forEach(function(h){var c=document.getElementById(h.id.replace('header-','content-'));if(c){c.style.maxHeight='0';c.style.opacity='0';c.style.overflow='hidden';c.style.transition='max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease';}});
+    window.toggleQuiz=function(id){var a=document.getElementById('quiz-answer-'+id);if(!a)return;if(a.innerHTML==='点击查看答案'||a.getAttribute('data-shown')!=='true'){a.style.opacity='1';a.innerHTML=a.getAttribute('data-answer')||'答案';a.setAttribute('data-shown','true');}else{a.style.opacity='0.5';a.innerHTML='点击查看答案';a.setAttribute('data-shown','false');}};
+    window.selectChoice=function(id,idx){var result=document.getElementById('choice-result-'+id);if(!result)return;var opts=result.parentElement.querySelectorAll('[id^="choice-opt-"]');opts.forEach(function(opt){opt.style.background='#fff';opt.style.borderColor='#e5e7eb';opt.style.color='#374151';opt.innerHTML='○ '+opt.textContent.replace(/^[✓✗]\\s*/,'');});var correct=parseInt(result.parentElement.getAttribute('data-correct')||'0');opts[correct].style.background='#d1fae5';opts[correct].style.borderColor='#10b981';opts[correct].innerHTML='✓ '+opts[correct].textContent.replace(/^[✓✗]\\s*/,'');if(idx===correct){opts[idx].style.background='#d1fae5';opts[idx].style.borderColor='#10b981';opts[idx].innerHTML='✓ '+opts[idx].textContent.replace(/^[✓✗]\\s*/,'');result.innerHTML='<span style="color:#059669">✓ 回答正确！</span>';}else{opts[idx].style.background='#fee2e2';opts[idx].style.borderColor='#ef4444';opts[idx].innerHTML='✗ '+opts[idx].textContent.replace(/^[✓✗]\\s*/,'');result.innerHTML='<span style="color:#dc2626">✗ 回答错误，再试试！</span>';}};
+    window.answerTF=function(id,answer,btn){var container=document.getElementById('truefalse-'+id);var isCorrect=container.getAttribute('data-correct')==='true';var result=document.getElementById('truefalse-result-'+id);var trueBtn=document.getElementById('tf-true-'+id);var falseBtn=document.getElementById('tf-false-'+id);trueBtn.style.background='#fff';trueBtn.style.borderColor='#e5e7eb';falseBtn.style.background='#fff';falseBtn.style.borderColor='#e5e7eb';if(answer===isCorrect){btn.style.background='#d1fae5';btn.style.borderColor='#10b981';result.innerHTML='<span style="color:#059669">✓ 回答正确！</span>';}else{btn.style.background='#fee2e2';btn.style.borderColor='#ef4444';result.innerHTML='<span style="color:#dc2626">✗ 回答错误！</span>';}};
+    window.setDrawMode=function(id,mode){var penBtn=document.getElementById('pen-btn-'+id);var eraserBtn=document.getElementById('eraser-btn-'+id);var canvas=document.getElementById('canvas-'+id);if(!canvas)return;canvas.setAttribute('data-mode',mode);if(mode==='pen'){if(penBtn){penBtn.style.background='#fff';penBtn.style.color='#8B4513';penBtn.style.borderColor='#fff';}if(eraserBtn){eraserBtn.style.background='#A0522D';eraserBtn.style.color='#fff';eraserBtn.style.borderColor='#A0522D';}}else{if(eraserBtn){eraserBtn.style.background='#fff';eraserBtn.style.color='#8B4513';eraserBtn.style.borderColor='#fff';}if(penBtn){penBtn.style.background='#A0522D';penBtn.style.color='#fff';penBtn.style.borderColor='#A0522D';}}};
+    window.clearDrawing=function(id){var canvas=document.getElementById('canvas-'+id);if(!canvas)return;var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);};
+    (function(){function initCanvas(id){var canvas=document.getElementById('canvas-'+id);if(!canvas)return;var ctx=canvas.getContext('2d');var drawing=false;var lastX=0,lastY=0;function resize(){var container=canvas.parentElement;canvas.width=container.offsetWidth;canvas.height=container.offsetHeight;}resize();window.addEventListener('resize',resize);function getPos(e){var rect=canvas.getBoundingClientRect();if(e.touches)return{x:e.touches[0].clientX-rect.left,y:e.touches[0].clientY-rect.top};return{x:e.clientX-rect.left,y:e.clientY-rect.top};}canvas.addEventListener('mousedown',function(e){drawing=true;var pos=getPos(e);lastX=pos.x;lastY=pos.y;});canvas.addEventListener('mousemove',function(e){if(!drawing)return;var pos=getPos(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(pos.x,pos.y);var mode=canvas.getAttribute('data-mode');if(mode==='eraser'){ctx.strokeStyle='#1a472a';ctx.lineWidth=30;}else{ctx.strokeStyle=document.getElementById('color-'+id).value;ctx.lineWidth=parseInt(document.getElementById('size-'+id).value);}ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();lastX=pos.x;lastY=pos.y;});canvas.addEventListener('mouseup',function(){drawing=false;});canvas.addEventListener('mouseleave',function(){drawing=false;});canvas.addEventListener('touchstart',function(e){e.preventDefault();drawing=true;var pos=getPos(e);lastX=pos.x;lastY=pos.y;},{passive:false});canvas.addEventListener('touchmove',function(e){e.preventDefault();if(!drawing)return;var pos=getPos(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(pos.x,pos.y);var mode=canvas.getAttribute('data-mode');if(mode==='eraser'){ctx.strokeStyle='#1a472a';ctx.lineWidth=30;}else{ctx.strokeStyle=document.getElementById('color-'+id).value;ctx.lineWidth=parseInt(document.getElementById('size-'+id).value);}ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();lastX=pos.x;lastY=pos.y;},{passive:false});canvas.addEventListener('touchend',function(){drawing=false;});}document.querySelectorAll('[id^="canvas-"]').forEach(function(c){initCanvas(c.id.replace('canvas-',''));});})();
+    window.switchTab=function(id,index){var container=document.getElementById('tabs-'+id);if(!container)return;var tabs=container.querySelectorAll('.tab-btn');var contents=container.querySelectorAll('.tab-content');tabs.forEach(function(tab,i){if(i===index){tab.style.borderBottom='2px solid #3b82f6';tab.style.color='#3b82f6';tab.style.fontWeight='bold';}else{tab.style.borderBottom='2px solid transparent';tab.style.color='#6b7280';tab.style.fontWeight='normal';}});contents.forEach(function(content,i){content.style.display=i===index?'block':'none';});};
+    window.toggleCheck=function(id,idx){var checkbox=document.getElementById('check-'+id+'-'+idx);var textSpan=checkbox.nextElementSibling;var status=document.getElementById('check-status-'+id+'-'+idx);if(checkbox.checked){textSpan.style.textDecoration='line-through';textSpan.style.color='#9ca3af';if(status)status.textContent='已完成';}else{textSpan.style.textDecoration='none';textSpan.style.color='#374151';if(status)status.textContent='';}};
+  `;
+
+  const generateHTML = () => {
+    const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
+    const initScript = `
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('[id^="accordion-header-"]').forEach(function(h) {
+          var c = document.getElementById(h.id.replace('header-', 'content-'));
+          if(c) {
+            c.style.maxHeight = '0';
+            c.style.opacity = '0';
+            c.style.overflow = 'hidden';
+            c.style.transition = 'max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease';
+          }
+        });
+        
+        document.querySelectorAll('[id^="accordion-header-"]').forEach(function(h) {
+          h.addEventListener('click', function() {
+            var id = h.id.replace('accordion-header-', '');
+            window.toggleAccordion(id);
+          });
+        });
+        
+        document.querySelectorAll('[id^="quiz-show-"]').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var id = btn.id.replace('quiz-show-', '');
+            window.toggleQuiz(id);
+          });
+        });
+        
+        document.querySelectorAll('[id^="choice-opt-"]').forEach(function(opt) {
+          opt.style.cursor = 'pointer';
+          opt.addEventListener('click', function() {
+            var resultEl = opt.parentElement.querySelector('[id^="choice-result-"]');
+            if(resultEl) {
+              var id = resultEl.id.replace('choice-result-', '');
+              var match = opt.id.match(/^choice-opt-.+-(\d+)$/);
+              if(match) {
+                var idx = parseInt(match[1]);
+                window.selectChoice(id, idx);
+              }
+            }
+          });
+        });
+        
+        document.querySelectorAll('[id^="tf-true-"], [id^="tf-false-"]').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var id = btn.id.replace('tf-true-', '').replace('tf-false-', '');
+            var answer = btn.id.includes('true');
+            window.answerTF(id, answer, btn);
+          });
+        });
+        
+        document.querySelectorAll('.tab-btn').forEach(function(tab, index) {
+          tab.style.cursor = 'pointer';
+          tab.addEventListener('click', function() {
+            var tabsContainer = tab.closest('[id^="tabs-"]');
+            if(tabsContainer) {
+              var id = tabsContainer.id.replace('tabs-', '');
+              window.switchTab(id, index);
+            }
+          });
+        });
+        
+        document.querySelectorAll('[id^="check-"]').forEach(function(cb) {
+          if(cb.type === 'checkbox') {
+            cb.addEventListener('change', function() {
+              var match = cb.id.match(/^check-(.+)-(\d+)$/);
+              if(match) {
+                var id = match[1];
+                var idx = parseInt(match[2]);
+                window.toggleCheck(id, idx);
+              }
+            });
+          }
+        });
+        
+        document.querySelectorAll('[id^="canvas-"]').forEach(function(canvas) {
+          var id = canvas.id.replace('canvas-', '');
+          if(typeof initCanvas === 'function') initCanvas(id);
+        });
+      });
+    `;
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>我的网页</title><script src="https://cdn.tailwindcss.com"></script><style>body{margin:0;min-height:100vh;position:relative;background:${gridSettings.dotGridBackground}}.page-container{position:relative;width:${CANVAS_WIDTH}px;margin:0 auto;background:${gridSettings.canvasBackground};min-height:${canvasHeight}px;border-radius:${gridSettings.canvasBorderRadius}px}</style></head><body><div class="page-container">${components.map(c => renderComponentToHTML(c)).join('\n')}</div><script>${INTERACTION_SCRIPTS}${initScript}</script></body></html>`;
+  };
+
+  const generateInteractiveHTML = async () => {
+    try {
+      setExportLoading(true);
+      setExportError(null);
+      
+      const projectData = {
+        components: JSON.parse(JSON.stringify(components)),
+        gridSettings: JSON.parse(JSON.stringify(gridSettings)),
+        canvasWidth: 1440,
+        title: '我的网页'
+      };
+      
+      const response = await fetch('/CodeMyPage/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectData, type: 'interactive' })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `导出失败: ${response.status}`);
+      }
+      
+      const html = await response.text();
+      
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'my-page-interactive.html'; a.click();
+      URL.revokeObjectURL(url);
+      
+      setExportLoading(false);
+    } catch (error: any) {
+      console.error('Export failed:', error);
+      setExportLoading(false);
+      setExportError(error.message || '导出失败');
+      alert(error.message || '导出失败');
+    }
+  };
+
+
+  const generateGitHubPagesHTML = () => {
+    try {
+      const html = generateHTML();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'github-pages.html'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error('Export failed:', error);
+      alert(error.message || '导出失败');
+    }
+  };
+
+  const handleExportStatic = () => {
     const html = generateHTML();
     const b = new Blob([html], { type: 'text/html' });
     const u = URL.createObjectURL(b);
-    const a = document.createElement('a'); a.href = u; a.download = 'my-page.html'; a.click();
+    const a = document.createElement('a'); a.href = u; a.download = 'my-page-static.html'; a.click();
+    setShowStaticWarning(false);
+    setShowExportModal(false);
+  };
+
+  const handleExport = (option: ExportOption) => {
+    if (option === 'static') {
+      setShowStaticWarning(true);
+    } else if (option === 'interactive') {
+      generateInteractiveHTML();
+    } else if (option === 'github') {
+      generateGitHubPagesHTML();
+    }
   };
 
   const handleSave = () => {
@@ -487,7 +605,7 @@ function App() {
             }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
             <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
-            <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
+            <button onClick={() => setShowExportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
           </div>
         </div>
         <div className={`flex-1 flex overflow-hidden transition-all ${showComponentEditor ? 'mr-80' : ''}`} onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); setShowComponentEditor(false); }}>
@@ -557,6 +675,19 @@ function App() {
             <button onClick={() => setZoom(Math.min(200, zoom + 25))} className="w-6 h-6 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-full font-bold">+</button>
           </div>
         </div>
+
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onSelect={handleExport}
+          loading={exportLoading}
+          error={exportError}
+        />
+        <StaticWarningModal
+          isOpen={showStaticWarning}
+          onClose={() => setShowStaticWarning(false)}
+          onConfirm={handleExportStatic}
+        />
       </div>
     </>
   );
@@ -714,5 +845,154 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
     </div>
   );
 }
+
+const ExportModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (option: ExportOption) => void;
+  loading: boolean;
+  error: string | null;
+}> = ({ isOpen, onClose, onSelect, loading, error }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="text-xl font-bold text-gray-800">导出选项</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+        </div>
+        
+        <div className="p-6 space-y-4">
+          <div 
+            className="p-4 border-2 border-blue-200 rounded-xl hover:border-blue-500 cursor-pointer transition-colors bg-blue-50/30"
+            onClick={() => onSelect('interactive')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Zap size={20} color="white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">完整交互单文件</h3>
+                <p className="text-sm text-gray-500">双击打开即可使用</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 ml-13">
+              导出一个包含完整 React 运行时的 HTML 文件，所有组件功能均可正常使用。文件较大（约1-2MB），但无需任何依赖。
+            </p>
+          </div>
+          
+          <div 
+            className="p-4 border-2 border-gray-200 rounded-xl hover:border-purple-500 cursor-pointer transition-colors"
+            onClick={() => onSelect('github')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                <Github size={20} color="white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">一键部署 GitHub Pages</h3>
+                <p className="text-sm text-gray-500">免费托管到互联网</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 ml-13">
+              导出一个可一键部署到 GitHub Pages 的文件，包含详细的部署说明。免费托管，可通过链接分享给任何人。
+            </p>
+          </div>
+          
+          <div 
+            className="p-4 border-2 border-gray-200 rounded-xl hover:border-gray-400 cursor-pointer transition-colors"
+            onClick={() => onSelect('static')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-gray-500 rounded-lg flex items-center justify-center">
+                <FileText size={20} color="white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">纯静态网页</h3>
+                <p className="text-sm text-gray-500">仅保留视觉效果</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 ml-13">
+              导出纯静态 HTML，视觉效果完整，但所有交互功能（如点击、输入、拖拽）将不可用。
+            </p>
+          </div>
+        </div>
+        
+        {loading && (
+          <div className="px-6 pb-4">
+            <div className="bg-blue-100 text-blue-700 px-4 py-3 rounded-lg text-sm">
+              正在构建项目并生成文件，请稍候...
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="px-6 pb-4">
+            <div className="bg-red-100 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <strong>导出失败：</strong>{error}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const StaticWarningModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}> = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+              <AlertTriangle size={24} className="text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">导出纯静态网页</h2>
+              <p className="text-sm text-gray-500">重要提示</p>
+            </div>
+          </div>
+          
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-amber-800">
+              <strong>您即将导出一个纯静态网页。</strong>
+            </p>
+            <ul className="text-sm text-amber-700 mt-2 space-y-1 list-disc list-inside">
+              <li>所有组件的交互功能将不可用</li>
+              <li>黑板无法写字、排序无法拖拽</li>
+              <li>按钮点击、输入框输入等都无法使用</li>
+              <li>仅保留静态视觉效果</li>
+            </ul>
+          </div>
+          
+          <p className="text-sm text-gray-600 mb-6">
+            如果您需要保留交互功能，请选择「完整交互单文件」选项。
+          </p>
+          
+          <div className="flex gap-3">
+            <button 
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              取消
+            </button>
+            <button 
+              onClick={onConfirm}
+              className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+            >
+              确认导出
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default App;

@@ -7,11 +7,10 @@ export const TabsRenderer: React.FC<{ component: WidgetProps; style: React.CSSPr
     { id: '1', label: '标签 1', content: '内容 1' },
     { id: '2', label: '标签 2', content: '内容 2' }
   ];
-  const currentTab = tabs.find((t: any) => t.id === activeTab) || tabs[0];
   
   return (
     <div style={style}>
-      <div style={{
+      <div id={`tabs-${component.id}`} style={{
         position: 'absolute',
         left: 0,
         top: 0,
@@ -27,6 +26,7 @@ export const TabsRenderer: React.FC<{ component: WidgetProps; style: React.CSSPr
           {tabs.map((tab: any) => (
             <div
               key={tab.id}
+              className="tab-btn"
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '12px 16px',
@@ -41,15 +41,21 @@ export const TabsRenderer: React.FC<{ component: WidgetProps; style: React.CSSPr
             </div>
           ))}
         </div>
-        <div style={{
-          padding: 16,
-          flex: 1,
-          color: '#374151',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
-          {currentTab?.content || '标签页内容'}
-        </div>
+        {tabs.map((tab: any) => (
+          <div
+            key={tab.id}
+            className="tab-content"
+            style={{
+              padding: 16,
+              flex: 1,
+              color: '#374151',
+              display: tab.id === activeTab ? 'flex' : 'none',
+              alignItems: 'center'
+            }}
+          >
+            {tab.content || '标签页内容'}
+          </div>
+        ))}
       </div>
     </div>
   );

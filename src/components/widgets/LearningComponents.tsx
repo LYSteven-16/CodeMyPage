@@ -31,13 +31,19 @@ export const QuizRenderer: React.FC<{ component: WidgetProps; style: React.CSSPr
         }}>
           {component.question || '问题'}
         </div>
-        <div style={{
-          color: (component as any).answerColor || '#059669',
-          backgroundColor: '#d1fae5',
-          padding: 12,
-          borderRadius: 4,
-          opacity: isOpen ? 1 : 0.5
-        }}>
+        <div 
+          id={`quiz-answer-${component.id}`}
+          data-answer={(component as any).answer || '答案'}
+          data-shown={isOpen ? 'true' : 'false'}
+          onClick={() => setIsOpen(!isOpen)}
+          style={{
+            color: (component as any).answerColor || '#059669',
+            backgroundColor: '#d1fae5',
+            padding: 12,
+            borderRadius: 4,
+            opacity: isOpen ? 1 : 0.5
+          }}
+        >
           {isOpen ? (component as any).answer || '答案' : '点击查看答案'}
         </div>
       </div>

@@ -173,6 +173,7 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
                 transition: 'all 0.05s ease'
               }} />
               <input
+                id={`color-${component.id}`}
                 type="color"
                 value={brushColor}
                 onChange={(e) => setBrushColor(e.target.value)}
@@ -186,6 +187,7 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
               />
             </div>
             <input
+              id={`size-${component.id}`}
               type="range"
               min="1"
               max="20"
@@ -205,7 +207,26 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
-              onClick={() => setIsErasing(!isErasing)}
+              id={`pen-btn-${component.id}`}
+              onClick={() => setIsErasing(false)}
+              style={{
+                padding: '6px 14px',
+                fontSize: 13,
+                border: `2px solid ${!isErasing ? '#fff' : '#5a8a5f'}`,
+                borderRadius: 6,
+                backgroundColor: !isErasing ? '#fff' : '#2d5a3d',
+                color: !isErasing ? '#8B4513' : '#fff',
+                cursor: 'pointer',
+                fontFamily: 'Georgia, serif',
+                boxShadow: !isErasing ? '0 2px 8px rgba(255,255,255,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
+                transition: 'all 0.2s'
+              }}
+            >
+              画笔
+            </button>
+            <button
+              id={`eraser-btn-${component.id}`}
+              onClick={() => setIsErasing(true)}
               style={{
                 padding: '6px 14px',
                 fontSize: 13,
@@ -222,6 +243,7 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
               {isErasing ? '✓ 橡皮' : '橡皮'}
             </button>
             <button
+              id={`clear-btn-${component.id}`}
               onClick={clearCanvas}
               style={{
                 padding: '6px 14px',
@@ -241,6 +263,7 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
           </div>
         </div>
         <canvas
+          id={`canvas-${component.id}`}
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
@@ -561,7 +584,7 @@ export const ChecklistRenderer: React.FC<{ component: WidgetProps; style: React.
         justifyContent: 'center',
         overflow: 'auto'
       }}>
-        {checklist.map((item: any) => (
+        {checklist.map((item: any, idx: number) => (
           <label
             key={item.id}
             style={{
@@ -573,6 +596,7 @@ export const ChecklistRenderer: React.FC<{ component: WidgetProps; style: React.
             }}
           >
             <input
+              id={`check-${component.id}-${idx}`}
               type="checkbox"
               checked={item.checked}
               onChange={(e) => {
@@ -583,12 +607,21 @@ export const ChecklistRenderer: React.FC<{ component: WidgetProps; style: React.
               }}
               style={{ width: 18, height: 18 }}
             />
-            <span style={{
-              color: item.checked ? '#9ca3af' : '#374151',
-              textDecoration: item.checked ? 'line-through' : 'none',
-              transition: 'all 0.2s'
-            }}>
+            <span 
+              id={`check-text-${component.id}-${idx}`}
+              style={{
+                color: item.checked ? '#9ca3af' : '#374151',
+                textDecoration: item.checked ? 'line-through' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
               {item.text}
+            </span>
+            <span 
+              id={`check-status-${component.id}-${idx}`}
+              style={{ marginLeft: 'auto', fontSize: 12, color: '#10b981' }}
+            >
+              {item.checked ? '已完成' : ''}
             </span>
           </label>
         ))}

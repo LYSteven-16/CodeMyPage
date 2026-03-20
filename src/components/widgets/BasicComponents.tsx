@@ -174,30 +174,44 @@ export const AccordionRenderer: React.FC<{ component: WidgetProps; style: React.
   const [isCollapsed, setIsCollapsed] = React.useState(mode === 'preview');
   const [isHovered, setIsHovered] = React.useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
-  const [measuredHeight, setMeasuredHeight] = React.useState<number | null>(null);
+  const [contentHeight, setContentHeight] = React.useState(0);
   
   React.useEffect(() => {
-    if (contentRef.current && measuredHeight === null) {
-      const el = contentRef.current;
-      el.style.visibility = 'hidden';
-      el.style.position = 'absolute';
-      el.style.maxHeight = 'none';
-      const h = el.scrollHeight;
-      el.style.visibility = '';
-      el.style.position = '';
-      el.style.maxHeight = '';
-      setMeasuredHeight(h);
-    }
-  }, [measuredHeight]);
+    const measureHeight = () => {
+      if (contentRef.current) {
+        const el = contentRef.current;
+        const originalVisibility = el.style.visibility;
+        const originalPosition = el.style.position;
+        const originalMaxHeight = el.style.maxHeight;
+        
+        el.style.visibility = 'hidden';
+        el.style.position = 'absolute';
+        el.style.maxHeight = 'none';
+        
+        const h = el.scrollHeight;
+        
+        el.style.visibility = originalVisibility;
+        el.style.position = originalPosition;
+        el.style.maxHeight = originalMaxHeight;
+        
+        setContentHeight(h);
+      }
+    };
+    
+    measureHeight();
+    
+    const observer = new ResizeObserver(measureHeight);
+    if (contentRef.current) observer.observe(contentRef.current);
+    return () => observer.disconnect();
+  }, []);
   
   const titleBarHeight = 52;
-  const maxContentHeight = measuredHeight ?? 100;
   
   return (
     <div 
       style={{
         ...style,
-        height: isCollapsed ? titleBarHeight : titleBarHeight + maxContentHeight,
+        height: isCollapsed ? titleBarHeight : titleBarHeight + contentHeight,
         overflow: 'hidden',
         transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
@@ -217,7 +231,14 @@ export const AccordionRenderer: React.FC<{ component: WidgetProps; style: React.
         border: '1px solid #e5e7eb'
       }}>
         <div 
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          id={`accordion-header-${component.id}`}
+          data-collapsed={isCollapsed ? 'true' : 'false'}
+          onClick={() => {
+            setIsCollapsed(!isCollapsed);
+            if (mode === 'preview' && typeof window !== 'undefined') {
+              (window as any).toggleAccordion?.(component.id);
+            }
+          }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           style={{
@@ -243,28 +264,35 @@ export const AccordionRenderer: React.FC<{ component: WidgetProps; style: React.
           }}>
             {(component as any).accordionTitle || '点击展开'}
           </span>
-          <div style={{
-            width: 24,
-            height: 24,
-            borderRadius: 6,
-            backgroundColor: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
-            transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)'
-          }}>
+          <div 
+            id={`accordion-icon-${component.id}`}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              backgroundColor: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+              transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease',
+              transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)'
+            }}
+          >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 4.5L6 7.5L9 4.5" stroke="#6b7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
         </div>
         <div 
+          id={`accordion-content-${component.id}`}
           ref={contentRef}
           style={{
             padding: 16,
-            color: (component as any).accordionContentColor || '#374151'
+            color: (component as any).accordionContentColor || '#374151',
+            overflow: 'hidden',
+            whiteSpace: 'pre-line',
+            wordBreak: 'break-word'
           }}
         >
           {(component as any).accordionContent || '隐藏内容'}

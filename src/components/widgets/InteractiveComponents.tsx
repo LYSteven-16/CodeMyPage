@@ -37,7 +37,7 @@ export const ChoiceRenderer: React.FC<{ component: WidgetProps; style: React.CSS
         }}>
           {component.question || '请选择正确答案：'}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} data-correct={correctIdx}>
           {options.map((opt: string, i: number) => {
             const isCorrect = i === correctIdx;
             let bgColor = '#fff', borderColor = '#e5e7eb';
@@ -50,6 +50,8 @@ export const ChoiceRenderer: React.FC<{ component: WidgetProps; style: React.CSS
             return (
               <div
                 key={i}
+                id={`choice-opt-${component.id}-${i}`}
+                data-text={opt}
                 onClick={() => checkChoice(i)}
                 style={{
                   padding: '10px 14px',
@@ -65,6 +67,7 @@ export const ChoiceRenderer: React.FC<{ component: WidgetProps; style: React.CSS
               </div>
             );
           })}
+          <div id={`choice-result-${component.id}`} style={{ marginTop: 8, fontWeight: 500, minHeight: 24 }}></div>
         </div>
       </div>
     </div>
@@ -234,7 +237,7 @@ export const TrueFalseRenderer: React.FC<{ component: WidgetProps; style: React.
   
   return (
     <div style={style}>
-      <div style={{
+      <div id={`truefalse-${component.id}`} data-correct={correctBool} style={{
         position: 'absolute',
         left: 0,
         top: 0,
@@ -253,6 +256,7 @@ export const TrueFalseRenderer: React.FC<{ component: WidgetProps; style: React.
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <button
+            id={`tf-true-${component.id}`}
             onClick={() => checkTrueFalse(true)}
             style={{
               padding: '10px 24px',
@@ -267,6 +271,7 @@ export const TrueFalseRenderer: React.FC<{ component: WidgetProps; style: React.
             √ 正确
           </button>
           <button
+            id={`tf-false-${component.id}`}
             onClick={() => checkTrueFalse(false)}
             style={{
               padding: '10px 24px',
@@ -281,6 +286,7 @@ export const TrueFalseRenderer: React.FC<{ component: WidgetProps; style: React.
             × 错误
           </button>
         </div>
+        <div id={`truefalse-result-${component.id}`} style={{ marginTop: 12, fontWeight: 500, minHeight: 24 }}></div>
       </div>
     </div>
   );
