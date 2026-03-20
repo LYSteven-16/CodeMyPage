@@ -56,7 +56,7 @@ export function ComponentRenderer({ component, style, mode = 'edit' }: Props) {
     case 'card':
       return <CardRenderer component={component} style={style} />;
     case 'accordion':
-      return <AccordionRenderer component={component} style={style} />;
+      return <AccordionRenderer component={component} style={style} mode={mode} />;
     case 'quiz':
       return <QuizRenderer component={component} style={style} />;
     case 'choice':

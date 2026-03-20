@@ -47,8 +47,9 @@ export const QuizRenderer: React.FC<{ component: WidgetProps; style: React.CSSPr
 
 export const AnswerSheetRenderer: React.FC<{ component: WidgetProps; style: React.CSSProperties }> = ({ component, style }) => {
   const totalQuestions = (component as any).totalQuestions || 10;
-  const answeredQuestions = (component as any).answeredQuestions || [];
-  const markedQuestions = (component as any).markedQuestions || [];
+  const [answeredQuestions, setAnsweredQuestions] = React.useState<number[]>([]);
+  const [markedQuestions, setMarkedQuestions] = React.useState<number[]>([]);
+  const [selectedQuestion, setSelectedQuestion] = React.useState<number | null>(null);
   const questions = Array.from({ length: totalQuestions }, (_, i) => i + 1);
   
   const getQuestionColor = (q: number) => {
@@ -56,6 +57,22 @@ export const AnswerSheetRenderer: React.FC<{ component: WidgetProps; style: Reac
     if (answeredQuestions.includes(q)) return { bg: '#d1fae5', border: '#10b981', text: '#065f46' };
     return { bg: '#f3f4f6', border: '#d1d5db', text: '#6b7280' };
   };
+  
+  const toggleAnswered = (q: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      setMarkedQuestions(prev => 
+        prev.includes(q) ? prev.filter(n => n !== q) : [...prev, q]
+      );
+    } else {
+      setAnsweredQuestions(prev => 
+        prev.includes(q) ? prev.filter(n => n !== q) : [...prev, q]
+      );
+    }
+    setSelectedQuestion(q);
+  };
+  
+  const answeredCount = answeredQuestions.length;
   
   return (
     <div style={style}>
@@ -71,15 +88,25 @@ export const AnswerSheetRenderer: React.FC<{ component: WidgetProps; style: Reac
         padding: 16,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'auto'
+        overflow: 'auto',
+        userSelect: 'none'
       }}>
         <div style={{
-          fontWeight: 'bold',
-          marginBottom: 12,
-          color: '#1f2937'
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 12
         }}>
-          答题卡
+          <div style={{ fontWeight: 'bold', color: '#1f2937', fontSize: 15 }}>
+            答题卡
+          </div>
+          <div style={{ fontSize: 12, color: '#6b7280' }}>
+            <span style={{ color: '#10b981', fontWeight: 'bold' }}>{answeredCount}</span>
+            <span> / </span>
+            <span style={{ color: '#6b7280' }}>{totalQuestions}</span>
+          </div>
         </div>
+        
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
@@ -88,36 +115,43 @@ export const AnswerSheetRenderer: React.FC<{ component: WidgetProps; style: Reac
           {questions.map((q: number) => {
             const colors = getQuestionColor(q);
             const isMarked = markedQuestions.includes(q);
+            const isSelected = selectedQuestion === q;
             
             return (
               <div
                 key={q}
+                onClick={(e) => toggleAnswered(q, e)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '8px 6px',
                   backgroundColor: colors.bg,
-                  border: `2px solid ${colors.border}`,
+                  border: `2px solid ${isSelected ? '#3b82f6' : colors.border}`,
                   borderRadius: 6,
                   textAlign: 'center',
                   fontSize: 14,
                   color: colors.text,
-                  position: 'relative'
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  transform: isSelected ? 'scale(0.95)' : 'scale(1)',
+                  boxShadow: isSelected ? '0 2px 8px rgba(59,130,246,0.3)' : 'none'
                 }}
               >
                 {q}
                 {isMarked && (
                   <span style={{
                     position: 'absolute',
-                    top: -6,
-                    right: -6,
-                    width: 16,
-                    height: 16,
+                    top: -5,
+                    right: -5,
+                    width: 14,
+                    height: 14,
                     backgroundColor: '#ef4444',
                     borderRadius: '50%',
-                    fontSize: 10,
+                    fontSize: 9,
                     color: '#fff',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    fontWeight: 'bold'
                   }}>
                     !
                   </span>
@@ -126,24 +160,39 @@ export const AnswerSheetRenderer: React.FC<{ component: WidgetProps; style: Reac
             );
           })}
         </div>
+        
         <div style={{
-          marginTop: 16,
+          marginTop: 12,
+          padding: '8px 10px',
+          backgroundColor: '#f9fafb',
+          borderRadius: 6,
+          fontSize: 11,
+          color: '#6b7280',
           display: 'flex',
-          gap: 16,
-          fontSize: 12,
+          justifyContent: 'space-between'
+        }}>
+          <span>点击：标记已答/未答</span>
+          <span>Shift+点击：标记疑问</span>
+        </div>
+        
+        <div style={{
+          marginTop: 10,
+          display: 'flex',
+          gap: 12,
+          fontSize: 11,
           color: '#6b7280'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 12, height: 12, backgroundColor: '#d1fae5', border: '1px solid #10b981', borderRadius: 2 }} />
+            <div style={{ width: 10, height: 10, backgroundColor: '#d1fae5', border: '1px solid #10b981', borderRadius: 2 }} />
             <span>已答</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 12, height: 12, backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 2 }} />
+            <div style={{ width: 10, height: 10, backgroundColor: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: 2 }} />
             <span>未答</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 12, height: 12, backgroundColor: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 2 }} />
-            <span>标记</span>
+            <div style={{ width: 10, height: 10, backgroundColor: '#fef3c7', border: '1px solid #f59e0b', borderRadius: 2 }} />
+            <span>疑问</span>
           </div>
         </div>
       </div>

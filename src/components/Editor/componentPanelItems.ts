@@ -6,25 +6,25 @@ export const componentPanelItems: ComponentPanelItem[] = [
     type: 'heading',
     label: '标题',
     icon: 'Heading',
-    defaultProps: { level: 'h1', text: '标题文字', height: 60 }
+    defaultProps: { level: 'h1', text: '标题文字', height: 56 }
   },
   {
     type: 'text',
     label: '文本',
     icon: 'Type',
-    defaultProps: { content: '这是段落文字，可以修改内容。', fontSize: 16, color: '#333333', height: 80 }
+    defaultProps: { content: '这是段落文字，可以修改内容。', fontSize: 16, color: '#333333', height: 56 }
   },
   {
     type: 'image',
     label: '图片',
     icon: 'Image',
-    defaultProps: { src: 'https://picsum.photos/400/300', alt: '图片', width: 400, height: 300, borderRadius: 8 }
+    defaultProps: { src: 'https://picsum.photos/400/300', alt: '图片', width: 320, height: 240, borderRadius: 8 }
   },
   {
     type: 'button',
     label: '按钮',
     icon: 'Square',
-    defaultProps: { buttonText: '点击这里', bgColor: '#3b82f6', textColor: '#ffffff', borderRadius: 8, height: 48 }
+    defaultProps: { buttonText: '点击这里', bgColor: '#3b82f6', textColor: '#ffffff', borderRadius: 8, height: 44 }
   },
   {
     type: 'card',
@@ -32,17 +32,17 @@ export const componentPanelItems: ComponentPanelItem[] = [
     icon: 'CreditCard',
     defaultProps: { 
       cardTitle: '卡片标题', 
-      description: '这里是卡片的描述内容，可以放入学习要点或知识点。',
+      description: '这里是卡片的描述内容。',
       imageUrl: 'https://picsum.photos/300/200',
       borderRadius: 12,
-      height: 250
+      height: 220
     }
   },
   {
     type: 'accordion',
     label: '折叠面板',
     icon: 'ChevronDown',
-    defaultProps: { accordionTitle: '点击展开', accordionContent: '这里是隐藏的内容。', height: 100 }
+    defaultProps: { accordionTitle: '点击展开', accordionContent: '这里是隐藏的内容。', height: 160 }
   },
   
   // ===== 输入互动类 =====
@@ -55,7 +55,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
       options: ['选项 A', '选项 B', '选项 C', '选项 D'],
       questionType: 'single',
       showFeedback: true,
-      height: 200
+      height: 160
     }
   },
   {
@@ -68,7 +68,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
         { id: '1', answer: '马里亚纳海沟', hint: '位于太平洋' },
         { id: '2', answer: '11034', hint: '约 11 公里' }
       ],
-      height: 120
+      height: 100
     }
   },
   {
@@ -79,7 +79,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
       statement: '地球是平的。',
       correctBool: false,
       showFeedback: true,
-      height: 80
+      height: 72
     }
   },
   {
@@ -88,7 +88,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
     icon: 'ArrowUpDown',
     defaultProps: {
       sortableItems: ['第一步', '第二步', '第三步', '第四步'],
-      height: 180
+      height: 160
     }
   },
   
@@ -101,8 +101,8 @@ export const componentPanelItems: ComponentPanelItem[] = [
       brushColor: '#000000',
       brushSize: 3,
       showToolbar: true,
-      width: 600,
-      height: 400
+      width: 480,
+      height: 320
     }
   },
   {
@@ -115,7 +115,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
         { id: '2', text: '完成学习目标 2', checked: false },
         { id: '3', text: '完成学习目标 3', checked: false }
       ],
-      height: 150
+      height: 120
     }
   },
   
@@ -126,12 +126,12 @@ export const componentPanelItems: ComponentPanelItem[] = [
     icon: 'FolderTabs',
     defaultProps: {
       tabs: [
-        { id: '1', label: '知识点 1', content: '这是第一个标签页的内容。' },
-        { id: '2', label: '知识点 2', content: '这是第二个标签页的内容。' },
-        { id: '3', label: '知识点 3', content: '这是第三个标签页的内容。' }
+        { id: '1', label: '标签 1', content: '内容 1' },
+        { id: '2', label: '标签 2', content: '内容 2' },
+        { id: '3', label: '标签 3', content: '内容 3' }
       ],
       activeTab: '1',
-      height: 200
+      height: 160
     }
   },
   {
@@ -145,7 +145,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
         { id: '3', title: '第三步', description: '巩固提高' }
       ],
       currentStep: 1,
-      height: 200
+      height: 160
     }
   },
   {
@@ -156,7 +156,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
       progress: 65,
       showPercent: true,
       progressColor: '#3b82f6',
-      height: 60
+      height: 48
     }
   },
   
@@ -168,8 +168,8 @@ export const componentPanelItems: ComponentPanelItem[] = [
     defaultProps: {
       videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
       poster: 'https://picsum.photos/400/225',
-      width: 400,
-      height: 225
+      width: 320,
+      height: 180
     }
   },
   {
@@ -178,7 +178,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
     icon: 'Volume2',
     defaultProps: {
       audioUrl: '',
-      height: 80
+      height: 72
     }
   },
   {
@@ -197,10 +197,10 @@ export const componentPanelItems: ComponentPanelItem[] = [
     label: '代码',
     icon: 'Code',
     defaultProps: {
-      code: 'console.log("Hello, World!");',
+      code: 'console.log("Hello!");',
       language: 'javascript',
       showCopy: true,
-      height: 100
+      height: 80
     }
   },
   {
@@ -215,7 +215,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
         ['项目 3', '数据 C', '说明']
       ],
       zebraStripe: true,
-      height: 150
+      height: 120
     }
   },
   {
@@ -225,7 +225,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
     defaultProps: {
       tagText: '重点',
       tagStyle: 'info',
-      height: 40
+      height: 32
     }
   },
   {
@@ -236,7 +236,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
       alertType: 'info',
       alertTitle: '提示标题',
       alertContent: '这是一条提示信息。',
-      height: 100
+      height: 72
     }
   },
   
@@ -247,10 +247,10 @@ export const componentPanelItems: ComponentPanelItem[] = [
     icon: 'ClipboardCheck',
     defaultProps: {
       totalQuestions: 10,
-      answeredQuestions: [1, 2, 3, 5, 7],
-      markedQuestions: [4, 8],
+      answeredQuestions: [],
+      markedQuestions: [],
       questionStatus: 'all',
-      height: 200
+      height: 160
     }
   },
   {
@@ -277,7 +277,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
       percentage: true,
       showGrade: true,
       feedbackMessage: '继续保持，下一章节会更难哦！',
-      height: 180
+      height: 160
     }
   }
 ];

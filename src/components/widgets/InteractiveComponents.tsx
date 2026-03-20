@@ -73,19 +73,49 @@ export const ChoiceRenderer: React.FC<{ component: WidgetProps; style: React.CSS
 
 export const FillBlankRenderer: React.FC<{ component: WidgetProps; style: React.CSSProperties }> = ({ component, style }) => {
   const [blankValues, setBlankValues] = React.useState<Record<string, string>>({});
+  const [results, setResults] = React.useState<Record<string, boolean | null>>({});
+  const [isChecked, setIsChecked] = React.useState(false);
   
   const blanks = (component as any).blanks || [];
   
   const checkFillBlanks = () => {
+    const newResults: Record<string, boolean | null> = {};
     blanks.forEach((blank: any) => {
-      const input = document.getElementById(`blank-${blank.id}`) as HTMLInputElement;
-      if (input) {
-        const isCorrect = input.value.trim().toLowerCase() === (blank.answer || '').toLowerCase();
-        input.style.borderColor = isCorrect ? '#10b981' : '#ef4444';
-        input.style.backgroundColor = isCorrect ? '#d1fae5' : '#fee2e2';
-      }
+      const userAnswer = blankValues[blank.id]?.trim().toLowerCase() || '';
+      const correctAnswer = (blank.answer || '').toLowerCase();
+      newResults[blank.id] = userAnswer === correctAnswer;
     });
+    setResults(newResults);
+    setIsChecked(true);
   };
+  
+  const getInputStyle = (blankId: string): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {
+      borderRadius: 6,
+      padding: '8px 12px',
+      width: 140,
+      fontSize: 14,
+      outline: 'none',
+      transition: 'all 0.2s ease'
+    };
+    
+    if (!isChecked) {
+      return {
+        ...baseStyle,
+        border: '1px solid #d1d5db',
+        backgroundColor: '#fff'
+      };
+    }
+    const isCorrect = results[blankId];
+    return {
+      ...baseStyle,
+      border: `2px solid ${isCorrect ? '#10b981' : '#ef4444'}`,
+      backgroundColor: isCorrect ? '#d1fae5' : '#fee2e2'
+    };
+  };
+  
+  const correctCount = Object.values(results).filter(r => r === true).length;
+  const totalBlanks = blanks.length;
   
   return (
     <div style={style}>
@@ -108,37 +138,84 @@ export const FillBlankRenderer: React.FC<{ component: WidgetProps; style: React.
           {component.content || '填空题内容'}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-          {blanks.map((blank: any) => (
-            <input
-              key={blank.id}
-              id={`blank-${blank.id}`}
-              placeholder={blank.hint || '请填写...'}
-              value={blankValues[blank.id] || ''}
-              onChange={(e) => setBlankValues({...blankValues, [blank.id]: e.target.value})}
-              style={{
-                border: '1px solid #d1d5db',
-                borderRadius: 4,
-                padding: '6px 10px',
-                width: 120,
-                fontSize: 14
-              }}
-            />
+          {blanks.map((blank: any, index: number) => (
+            <React.Fragment key={blank.id}>
+              <input
+                id={`blank-${blank.id}`}
+                placeholder={blank.hint || `填空 ${index + 1}`}
+                value={blankValues[blank.id] || ''}
+                onChange={(e) => setBlankValues({...blankValues, [blank.id]: e.target.value})}
+                disabled={isChecked}
+                style={getInputStyle(blank.id)}
+              />
+            </React.Fragment>
           ))}
         </div>
-        <button
-          onClick={checkFillBlanks}
-          style={{
-            padding: '8px 16px',
-            background: '#3b82f6',
-            color: '#fff',
-            border: 'none',
+        {isChecked && (
+          <div style={{
+            padding: '10px 14px',
+            backgroundColor: correctCount === totalBlanks ? '#d1fae5' : '#fef3c7',
             borderRadius: 6,
-            cursor: 'pointer',
-            alignSelf: 'flex-start'
-          }}
-        >
-          检查答案
-        </button>
+            marginBottom: 12,
+            fontSize: 14,
+            color: correctCount === totalBlanks ? '#065f46' : '#92400e',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <span style={{ fontSize: 18 }}>
+              {correctCount === totalBlanks ? '🎉' : '📝'}
+            </span>
+            <span>
+              {correctCount === totalBlanks 
+                ? '全部正确！' 
+                : `答对 ${correctCount} / ${totalBlanks}`}
+            </span>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10 }}>
+          {!isChecked ? (
+            <button
+              onClick={checkFillBlanks}
+              disabled={Object.keys(blankValues).length === 0}
+              style={{
+                padding: '10px 20px',
+                background: Object.keys(blankValues).length === 0 ? '#9ca3af' : '#3b82f6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: Object.keys(blankValues).length === 0 ? 'not-allowed' : 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(59,130,246,0.3)'
+              }}
+            >
+              检查答案
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setBlankValues({});
+                setResults({});
+                setIsChecked(false);
+              }}
+              style={{
+                padding: '10px 20px',
+                background: '#fff',
+                color: '#374151',
+                border: '2px solid #d1d5db',
+                borderRadius: 8,
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              重新作答
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -212,29 +289,34 @@ export const TrueFalseRenderer: React.FC<{ component: WidgetProps; style: React.
 export const SortableRenderer: React.FC<{ component: WidgetProps; style: React.CSSProperties }> = ({ component, style }) => {
   const [sortItems, setSortItems] = React.useState((component as any).sortableItems || []);
   const [dragIdx, setDragIdx] = React.useState<number | null>(null);
-  const [dropIndicator, setDropIndicator] = React.useState<number | null>(null);
+  const [dropIdx, setDropIdx] = React.useState<number | null>(null);
   
-  const containerHeight = 150;
+  const containerRef = React.useRef<HTMLDivElement>(null);
   
-  const handleSortMouseMove = (e: React.MouseEvent) => {
-    if (dragIdx === null) return;
-    const items = sortItems.length;
-    if (items === 0) return;
-    const itemHeight = containerHeight / items;
-    const mouseY = e.nativeEvent.offsetY;
-    const newDropIdx = Math.max(0, Math.min(items - 1, Math.floor(mouseY / itemHeight)));
-    setDropIndicator(newDropIdx);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragIdx === null || !containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const itemCount = sortItems.length;
+    const itemHeight = (rect.height - 20) / itemCount;
+    const idx = Math.max(0, Math.min(itemCount - 1, Math.floor((y - 10) / itemHeight)));
+    setDropIdx(idx);
   };
   
-  const handleSortMouseUp = () => {
-    if (dragIdx !== null && dropIndicator !== null && dragIdx !== dropIndicator) {
+  const handleMouseUp = () => {
+    if (dragIdx !== null && dropIdx !== null && dragIdx !== dropIdx) {
       const newItems = [...sortItems];
       const [removed] = newItems.splice(dragIdx, 1);
-      newItems.splice(dropIndicator, 0, removed);
+      newItems.splice(dropIdx, 0, removed);
       setSortItems(newItems);
     }
     setDragIdx(null);
-    setDropIndicator(null);
+    setDropIdx(null);
+  };
+  
+  const handleReset = () => {
+    setSortItems((component as any).sortableItems || []);
   };
   
   return (
@@ -251,48 +333,122 @@ export const SortableRenderer: React.FC<{ component: WidgetProps; style: React.C
         padding: 16,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center'
+        overflow: 'hidden'
       }}>
-        <div style={{ fontWeight: "bold", marginBottom: 12, userSelect: "none" }}>
-          请按正确顺序排列：
+        <div style={{ 
+          fontWeight: "bold", 
+          marginBottom: 10, 
+          userSelect: "none",
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: 13, color: '#6b7280' }}>请按正确顺序排列</span>
+          {sortItems.length > 0 && (
+            <button
+              onClick={handleReset}
+              style={{
+                padding: '4px 10px',
+                fontSize: 11,
+                background: '#f3f4f6',
+                border: '1px solid #d1d5db',
+                borderRadius: 4,
+                cursor: 'pointer',
+                color: '#6b7280'
+              }}
+            >
+              重置
+            </button>
+          )}
         </div>
         <div
+          ref={containerRef}
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 8,
+            gap: 6,
             flex: 1,
             userSelect: "none",
             WebkitUserSelect: "none",
-            MozUserSelect: "none"
+            MozUserSelect: "none",
+            padding: '4px 0'
           }}
-          onMouseMove={handleSortMouseMove}
-          onMouseUp={handleSortMouseUp}
-          onMouseLeave={() => { setDragIdx(null); setDropIndicator(null); }}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={() => {
+            if (dragIdx !== null) handleMouseUp();
+          }}
         >
           {sortItems.map((item: string, i: number) => {
             const isDragging = dragIdx === i;
-            const isDropTarget = dropIndicator === i && dragIdx !== null && dragIdx !== i;
+            const isAboveDrop = dragIdx !== null && dropIdx !== null && 
+              ((dragIdx < dropIdx && i > dragIdx && i <= dropIdx) || 
+               (dragIdx > dropIdx && i < dragIdx && i >= dropIdx));
             
             return (
               <div
-                key={i}
-                onMouseDown={() => setDragIdx(i)}
+                key={`${item}-${i}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setDragIdx(i);
+                }}
                 style={{
-                  padding: '10px 14px',
-                  border: `2px solid ${isDropTarget ? '#3b82f6' : '#e5e7eb'}`,
-                  borderRadius: 8,
-                  backgroundColor: isDragging ? '#e0f2fe' : (isDropTarget ? '#f0f9ff' : '#f9fafb'),
-                  cursor: 'grab',
+                  padding: '12px 14px',
+                  border: `2px solid ${isDragging ? '#3b82f6' : isAboveDrop ? '#93c5fd' : '#e5e7eb'}`,
+                  borderRadius: 10,
+                  backgroundColor: isDragging 
+                    ? '#dbeafe' 
+                    : isAboveDrop 
+                      ? '#eff6ff' 
+                      : '#f9fafb',
+                  cursor: dragIdx === null ? 'grab' : 'grabbing',
                   display: 'flex',
-                  userSelect: 'none',
                   alignItems: 'center',
-                  gap: 8,
-                  transform: isDragging ? 'scale(0.98)' : 'scale(1)',
-                  transition: isDragging ? 'none' : 'all 0.15s'
+                  gap: 10,
+                  transform: isDragging 
+                    ? 'scale(1.02)' 
+                    : isAboveDrop 
+                      ? `translateY(${dragIdx < i ? -12 : 12}px)` 
+                      : 'translateY(0)',
+                  transition: isDragging 
+                    ? 'none' 
+                    : 'all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                  boxShadow: isDragging 
+                    ? '0 8px 16px rgba(59,130,246,0.2)' 
+                    : '0 1px 3px rgba(0,0,0,0.05)',
+                  opacity: isDragging ? 0.9 : 1
                 }}
               >
-                ☰ {item}
+                <div style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 4,
+                  backgroundColor: isDragging ? '#3b82f6' : '#e5e7eb',
+                  color: isDragging ? '#fff' : '#9ca3af',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  flexShrink: 0,
+                  transition: 'all 0.2s'
+                }}>
+                  {i + 1}
+                </div>
+                <span style={{
+                  color: '#374151',
+                  fontSize: 14,
+                  flex: 1
+                }}>
+                  {item}
+                </span>
+                <div style={{
+                  color: '#9ca3af',
+                  fontSize: 16,
+                  cursor: 'grab'
+                }}>
+                  ⋮⋮
+                </div>
               </div>
             );
           })}
