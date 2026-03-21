@@ -217,8 +217,14 @@ ${jsContent}
         format: [CANVAS_WIDTH, CANVAS_MIN_HEIGHT]
       });
 
+      const canvasHeight = Math.max(
+        CANVAS_MIN_HEIGHT,
+        ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200)
+      );
+
       sessionStorage.setItem('previewComponents', JSON.stringify(components));
       sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
+      sessionStorage.setItem('previewPdfHeight', String(canvasHeight + 40));
 
       const previewFrame = document.createElement('iframe');
       previewFrame.style.cssText = `
@@ -226,7 +232,7 @@ ${jsContent}
         left: -9999px;
         top: 0;
         width: ${CANVAS_WIDTH + 40}px;
-        height: 100vh;
+        height: ${canvasHeight + 100}px;
         border: none;
       `;
       previewFrame.id = 'pdf-preview-frame';
@@ -259,6 +265,7 @@ ${jsContent}
         backgroundColor: gridSettings.dotGridBackground,
         width: CANVAS_WIDTH + 40,
         windowWidth: CANVAS_WIDTH + 40,
+        height: canvasHeight + 40,
         onclone: (clonedDoc) => {
           const clonedBody = clonedDoc.body;
           if (clonedBody) {
