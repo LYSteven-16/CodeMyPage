@@ -1,5 +1,5 @@
 import React, { useState, useRef, forwardRef, useEffect } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { createRoot } from 'react-dom/client';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import { ComponentRenderer } from './components/ComponentRenderer';
@@ -106,17 +106,6 @@ function App() {
     };
     setComponents([...components, newComponent]);
     setSelectedId(newComponent.id);
-  };
-
-  const renderComponentToHTML = (comp: WidgetProps): string => {
-    const style: React.CSSProperties = {
-      position: 'absolute',
-      left: comp.x || 0,
-      top: comp.y || 0,
-      width: comp.width || 300,
-      height: comp.height || 200
-    };
-    return renderToStaticMarkup(<ComponentRenderer component={comp} style={style} mode="preview" />);
   };
 
 
@@ -235,37 +224,47 @@ ${jsContent}
         ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200)
       );
 
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '0';
-      tempDiv.style.width = `${CANVAS_WIDTH}px`;
-      tempDiv.style.minHeight = `${canvasHeight}px`;
-      tempDiv.style.background = gridSettings.canvasBackground;
-      tempDiv.style.borderRadius = `${gridSettings.canvasBorderRadius}px`;
-      tempDiv.style.padding = '20px';
+      const tempContainer = document.createElement('div');
+      tempContainer.id = 'pdf-export-container';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.zIndex = '-1';
+      tempContainer.style.width = `${CANVAS_WIDTH}px`;
+      tempContainer.style.minHeight = `${canvasHeight}px`;
+      tempContainer.style.background = gridSettings.canvasBackground;
+      tempContainer.style.borderRadius = `${gridSettings.canvasBorderRadius}px`;
+      tempContainer.style.padding = '20px';
 
-      components.forEach((comp: WidgetProps) => {
-        const compDiv = document.createElement('div');
-        compDiv.style.position = 'absolute';
-        compDiv.style.left = `${comp.x || 0}px`;
-        compDiv.style.top = `${comp.y || 0}px`;
-        compDiv.style.width = `${comp.width || 300}px`;
-        compDiv.style.height = `${comp.height || 200}px`;
-        compDiv.innerHTML = renderComponentToHTML(comp);
-        tempDiv.appendChild(compDiv);
-      });
+      document.body.appendChild(tempContainer);
 
-      document.body.appendChild(tempDiv);
+      const root = createRoot(tempContainer);
+      root.render(
+        <>
+          {components.map((comp: WidgetProps) => {
+            const style: React.CSSProperties = {
+              position: 'absolute',
+              left: comp.x || 0,
+              top: comp.y || 0,
+              width: comp.width || 300,
+              height: comp.height || 200
+            };
+            return <ComponentRenderer key={comp.id} component={comp} style={style} mode="preview" />;
+          })}
+        </>
+      );
 
-      const canvas = await html2canvas(tempDiv, {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(tempContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: gridSettings.canvasBackground
       });
 
-      document.body.removeChild(tempDiv);
+      root.unmount();
+      document.body.removeChild(tempContainer);
 
       const imgData = canvas.toDataURL('image/png');
       const pdfHeight = (canvas.height * CANVAS_WIDTH) / canvas.width;
