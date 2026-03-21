@@ -229,16 +229,22 @@ ${jsContent}
       tempContainer.style.position = 'fixed';
       tempContainer.style.left = '-9999px';
       tempContainer.style.top = '0';
-      tempContainer.style.zIndex = '-1';
-      tempContainer.style.width = `${CANVAS_WIDTH}px`;
-      tempContainer.style.minHeight = `${canvasHeight}px`;
-      tempContainer.style.background = gridSettings.canvasBackground;
-      tempContainer.style.borderRadius = `${gridSettings.canvasBorderRadius}px`;
+      tempContainer.style.minHeight = '100vh';
+      tempContainer.style.background = gridSettings.dotGridBackground;
       tempContainer.style.padding = '20px';
 
+      const canvasContainer = document.createElement('div');
+      canvasContainer.style.position = 'relative';
+      canvasContainer.style.width = `${CANVAS_WIDTH}px`;
+      canvasContainer.style.minHeight = `${canvasHeight}px`;
+      canvasContainer.style.background = gridSettings.canvasBackground;
+      canvasContainer.style.borderRadius = `${gridSettings.canvasBorderRadius}px`;
+      canvasContainer.style.margin = '0 auto';
+
+      tempContainer.appendChild(canvasContainer);
       document.body.appendChild(tempContainer);
 
-      const root = createRoot(tempContainer);
+      const root = createRoot(canvasContainer);
       root.render(
         <>
           {components.map((comp: WidgetProps) => {
@@ -260,7 +266,7 @@ ${jsContent}
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: gridSettings.canvasBackground
+        backgroundColor: gridSettings.dotGridBackground
       });
 
       root.unmount();
