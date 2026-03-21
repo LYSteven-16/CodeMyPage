@@ -74,14 +74,17 @@ function generateInteractiveHTML(projectData: ProjectData, jsContent: string, cs
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>${title}</title>
   <style>
     * { box-sizing: border-box; }
     body { 
       margin: 0; 
       min-height: 100vh; 
+      height: auto;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .page-container { 
       position: relative; 
