@@ -27,8 +27,10 @@ import {
   QuizRenderer,
   AnswerSheetRenderer,
   AnswerExplanationRenderer,
-  ScoreDisplayRenderer
-} from './widgets';
+  ScoreDisplayRenderer,
+  DividerRenderer,
+  SpacerRenderer,
+} from './NewStyleRenderers';
 
 interface Props {
   component: WidgetProps;
@@ -36,67 +38,110 @@ interface Props {
   mode?: 'edit' | 'preview';
 }
 
-export function ComponentRenderer({ component, style, mode = 'edit' }: Props) {
-  const renderDrawing = () => {
-    if (mode === 'preview') {
-      return <DrawingPreviewRenderer component={component} style={style} />;
-    }
-    return <DrawingRenderer component={component} style={style} />;
+const wrapRenderer = (renderer: React.FC<{ widget: WidgetProps }>) => {
+  return ({ component, style }: Props) => {
+    const widget: WidgetProps = {
+      ...component,
+      x: typeof style.left === 'number' ? style.left : 0,
+      y: typeof style.top === 'number' ? style.top : 0,
+    };
+    return renderer({ widget });
   };
-  
+};
+
+const WrappedHeading = wrapRenderer(HeadingRenderer);
+const WrappedText = wrapRenderer(TextRenderer);
+const WrappedImage = wrapRenderer(ImageRenderer);
+const WrappedButton = wrapRenderer(ButtonRenderer);
+const WrappedCard = wrapRenderer(CardRenderer);
+const WrappedAccordion = wrapRenderer(AccordionRenderer);
+const WrappedChoice = wrapRenderer(ChoiceRenderer);
+const WrappedFillBlank = wrapRenderer(FillBlankRenderer);
+const WrappedTrueFalse = wrapRenderer(TrueFalseRenderer);
+const WrappedSortable = wrapRenderer(SortableRenderer);
+const WrappedTabs = wrapRenderer(TabsRenderer);
+const WrappedTimeline = wrapRenderer(TimelineRenderer);
+const WrappedProgress = wrapRenderer(ProgressRenderer);
+const WrappedVideo = wrapRenderer(VideoRenderer);
+const WrappedAudio = wrapRenderer(AudioRenderer);
+const WrappedQuote = wrapRenderer(QuoteRenderer);
+const WrappedCode = wrapRenderer(CodeRenderer);
+const WrappedTable = wrapRenderer(TableRenderer);
+const WrappedTag = wrapRenderer(TagRenderer);
+const WrappedAlert = wrapRenderer(AlertRenderer);
+const WrappedChecklist = wrapRenderer(ChecklistRenderer);
+const WrappedQuiz = wrapRenderer(QuizRenderer);
+const WrappedAnswerSheet = wrapRenderer(AnswerSheetRenderer);
+const WrappedAnswerExplanation = wrapRenderer(AnswerExplanationRenderer);
+const WrappedScoreDisplay = wrapRenderer(ScoreDisplayRenderer);
+const WrappedDivider = wrapRenderer(DividerRenderer);
+const WrappedSpacer = wrapRenderer(SpacerRenderer);
+
+const renderDrawing = (component: WidgetProps, style: React.CSSProperties, mode: 'edit' | 'preview') => {
+  if (mode === 'preview') {
+    return <DrawingPreviewRenderer widget={{ ...component, x: style.left as number || 0, y: style.top as number || 0 }} />;
+  }
+  return <DrawingRenderer widget={{ ...component, x: style.left as number || 0, y: style.top as number || 0 }} />;
+};
+
+export function ComponentRenderer({ component, style, mode = 'edit' }: Props) {
   switch (component.type) {
     case 'heading':
-      return <HeadingRenderer component={component} style={style} />;
+      return <WrappedHeading component={component} style={style} />;
     case 'text':
-      return <TextRenderer component={component} style={style} />;
+      return <WrappedText component={component} style={style} />;
     case 'image':
-      return <ImageRenderer component={component} style={style} />;
+      return <WrappedImage component={component} style={style} />;
     case 'button':
-      return <ButtonRenderer component={component} style={style} />;
+      return <WrappedButton component={component} style={style} />;
     case 'card':
-      return <CardRenderer component={component} style={style} />;
+      return <WrappedCard component={component} style={style} />;
     case 'accordion':
-      return <AccordionRenderer component={component} style={style} mode={mode} />;
+      return <WrappedAccordion component={component} style={style} />;
     case 'quiz':
-      return <QuizRenderer component={component} style={style} />;
+      return <WrappedQuiz component={component} style={style} />;
     case 'choice':
-      return <ChoiceRenderer component={component} style={style} />;
+      return <WrappedChoice component={component} style={style} />;
     case 'fillBlank':
-      return <FillBlankRenderer component={component} style={style} />;
+      return <WrappedFillBlank component={component} style={style} />;
     case 'trueFalse':
-      return <TrueFalseRenderer component={component} style={style} />;
+      return <WrappedTrueFalse component={component} style={style} />;
     case 'sortable':
-      return <SortableRenderer component={component} style={style} />;
+      return <WrappedSortable component={component} style={style} />;
     case 'drawing':
-      return renderDrawing();
+      return renderDrawing(component, style, mode);
     case 'checklist':
-      return <ChecklistRenderer component={component} style={style} />;
+      return <WrappedChecklist component={component} style={style} />;
     case 'tabs':
-      return <TabsRenderer component={component} style={style} />;
+      return <WrappedTabs component={component} style={style} />;
     case 'timeline':
-      return <TimelineRenderer component={component} style={style} />;
+      return <WrappedTimeline component={component} style={style} />;
     case 'progress':
-      return <ProgressRenderer component={component} style={style} />;
+      return <WrappedProgress component={component} style={style} />;
     case 'video':
-      return <VideoRenderer component={component} style={style} />;
+      return <WrappedVideo component={component} style={style} />;
     case 'audio':
-      return <AudioRenderer component={component} style={style} />;
+      return <WrappedAudio component={component} style={style} />;
     case 'quote':
-      return <QuoteRenderer component={component} style={style} />;
+      return <WrappedQuote component={component} style={style} />;
     case 'code':
-      return <CodeRenderer component={component} style={style} />;
+      return <WrappedCode component={component} style={style} />;
     case 'table':
-      return <TableRenderer component={component} style={style} />;
+      return <WrappedTable component={component} style={style} />;
     case 'tag':
-      return <TagRenderer component={component} style={style} />;
+      return <WrappedTag component={component} style={style} />;
     case 'alert':
-      return <AlertRenderer component={component} style={style} />;
+      return <WrappedAlert component={component} style={style} />;
     case 'answerSheet':
-      return <AnswerSheetRenderer component={component} style={style} />;
+      return <WrappedAnswerSheet component={component} style={style} />;
     case 'answerExplanation':
-      return <AnswerExplanationRenderer component={component} style={style} />;
+      return <WrappedAnswerExplanation component={component} style={style} />;
     case 'scoreDisplay':
-      return <ScoreDisplayRenderer component={component} style={style} />;
+      return <WrappedScoreDisplay component={component} style={style} />;
+    case 'divider':
+      return <WrappedDivider component={component} style={style} />;
+    case 'spacer':
+      return <WrappedSpacer component={component} style={style} />;
     default:
       return (
         <div style={style}>

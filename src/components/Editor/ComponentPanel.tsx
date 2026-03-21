@@ -1,6 +1,7 @@
 import React from 'react';
 import { componentPanelItems } from './componentPanelItems';
-import * as Icons from 'lucide-react';
+import { IconRenderer } from '../NewStyleRenderers';
+import type { IconName } from '../NewStyleRenderers';
 
 interface ComponentPanelProps {
   isInContainer?: boolean;
@@ -10,8 +11,7 @@ interface ComponentPanelProps {
 
 export const ComponentPanel: React.FC<ComponentPanelProps> = ({ isInContainer = false, onAdd }) => {
   const getIcon = (iconName: string) => {
-    const Icon = (Icons as any)[iconName];
-    return Icon ? <Icon size={18} /> : <Icons.Box size={18} />;
+    return <IconRenderer name={iconName as IconName} size={18} />;
   };
 
   const availableItems = isInContainer 

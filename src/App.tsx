@@ -2,11 +2,12 @@ import React, { useState, useRef, forwardRef, useEffect } from 'react';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import { ComponentRenderer } from './components/ComponentRenderer';
+import { TopToolbar } from './components/TopToolbar';
 import { PreviewPage } from './PreviewPage';
 import type { WidgetProps, ComponentPanelItem } from './types';
-import { Download, Eye, Trash2, Copy, ArrowUp, ArrowDown, Grid3X3, Move, Save, Upload, X, Zap, FileText } from 'lucide-react';
+import { IconRenderer } from './components/NewStyleRenderers';
 
-type ExportOption = 'interactive' | 'pdf';
+type ExportOption = 'interactive' | 'pdf' | 'project';
 
 interface GridSettings {
   dotSize: number;
@@ -40,6 +41,9 @@ function App() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [autoSave, setAutoSave] = useState(true);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetChecked, setResetChecked] = useState(false);
   const workAreaRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +61,62 @@ function App() {
     canvasBorderRadius: 0,
     dotGridBackground: '#f3f4f6'
   });
+
+  const COOKIE_NAME = 'codemypage_project';
+  const AUTO_SAVE_KEY = 'codemypage_autosave';
+
+  const saveToCookie = (components: WidgetProps[], settings: GridSettings) => {
+    try {
+      const data = {
+        version: '1.0',
+        components,
+        gridSettings: settings,
+        savedAt: new Date().toISOString()
+      };
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 30);
+      document.cookie = `${COOKIE_NAME}=${encodeURIComponent(JSON.stringify(data))};expires=${expires.toUTCString()};path=/`;
+    } catch (error) {
+      console.error('Failed to save to cookie:', error);
+    }
+  };
+
+  const loadFromCookie = (): { components: WidgetProps[]; gridSettings: GridSettings } | null => {
+    try {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === COOKIE_NAME) {
+          const data = JSON.parse(decodeURIComponent(value));
+          if (data.components && data.gridSettings) {
+            return data;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load from cookie:', error);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const savedAutoSave = localStorage.getItem(AUTO_SAVE_KEY);
+    if (savedAutoSave !== null) {
+      setAutoSave(savedAutoSave === 'true');
+    }
+
+    const savedData = loadFromCookie();
+    if (savedData && savedData.components.length > 0) {
+      setComponents(savedData.components);
+      setGridSettings(savedData.gridSettings);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (autoSave && components.length > 0) {
+      saveToCookie(components, gridSettings);
+    }
+  }, [components, gridSettings, autoSave]);
 
   useEffect(() => {
     const preventTouchGestures = (e: TouchEvent) => {
@@ -209,11 +269,9 @@ ${jsContent}
       setExportLoading(true);
       setExportError(null);
 
-      const { generatePDFDirect } = await import('./utils/pdfRenderer');
+      const { generatePDF } = await import('./utils/pdfGenerator');
       
-      await document.fonts.ready;
-      
-      const pdfBlob = await generatePDFDirect(components, gridSettings);
+      const pdfBlob = await generatePDF(components, gridSettings);
       
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
@@ -237,6 +295,8 @@ ${jsContent}
       generateInteractiveHTML();
     } else if (option === 'pdf') {
       generatePDF();
+    } else if (option === 'project') {
+      handleSave();
     }
   };
 
@@ -492,104 +552,54 @@ ${jsContent}
     <>
       {renderEditModal()}
       <div className="h-screen flex flex-col">
-        <div className="h-14 bg-white border-b flex items-center justify-between px-4" onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); }}>
-          <h1 className="text-xl font-bold text-blue-600">CodeMyPage</h1>
-          <div className="flex items-center gap-2">
-            {/* 网格设置 */}
-            <div className="relative">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setShowGridSettings(!showGridSettings); setShowBgSettings(false); setShowCanvasSettings(false); }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${showGridSettings ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'} hover:bg-gray-50`}
-              >
-                <Grid3X3 size={16} />
-                <span className="text-sm">网格</span>
-              </button>
-              {showGridSettings && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-3 w-64 z-50" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium">网格设置</span>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={gridSettings.snapToGrid} onChange={(e) => handleGridChange({ snapToGrid: e.target.checked })} className="w-4 h-4 accent-blue-500" />
-                      启用对齐
-                    </label>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="w-14 text-gray-600">间距</span>
-                      <input type="range" min="0" max="60" value={gridSettings.dotSpacing} onChange={(e) => handleGridChange({ dotSpacing: parseInt(e.target.value) })} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
-                      <span className="w-12 text-right text-xs text-gray-500">{gridSettings.dotSpacing}px</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* 背景颜色 */}
-            <div className="relative">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setShowBgSettings(!showBgSettings); setShowGridSettings(false); setShowCanvasSettings(false); }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${showBgSettings ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'} hover:bg-gray-50`}
-              >
-                <div className="w-4 h-4 rounded border" style={{ backgroundColor: gridSettings.dotGridBackground }}></div>
-                <span className="text-sm">背景</span>
-              </button>
-              {showBgSettings && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-3 w-64 z-50" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">背景颜色</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">颜色</span>
-                    <input type="color" value={gridSettings.dotGridBackground} onChange={(e) => handleGridChange({ dotGridBackground: e.target.value })} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-gray-200" />
-                    <span className="text-xs text-gray-500 font-mono">{gridSettings.dotGridBackground}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* 画布颜色 */}
-            <div className="relative">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setShowCanvasSettings(!showCanvasSettings); setShowGridSettings(false); setShowBgSettings(false); }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full border ${showCanvasSettings ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'} hover:bg-gray-50`}
-              >
-                <div className="w-4 h-4 rounded border" style={{ backgroundColor: gridSettings.canvasBackground }}></div>
-                <span className="text-sm">画布</span>
-              </button>
-              {showCanvasSettings && (
-                <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-lg border p-3 w-64 z-50" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">画布设置</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-600 w-14">颜色</span>
-                      <input type="color" value={gridSettings.canvasBackground} onChange={(e) => handleGridChange({ canvasBackground: e.target.value })} className="w-10 h-10 rounded-lg cursor-pointer border-2 border-gray-200" />
-                      <span className="text-xs text-gray-500 font-mono">{gridSettings.canvasBackground}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600 w-14">圆角</span>
-                      <input type="range" min="0" max="60" value={gridSettings.canvasBorderRadius} onChange={(e) => handleGridChange({ canvasBorderRadius: parseInt(e.target.value) })} className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
-                      <span className="w-12 text-right text-xs text-gray-500">{gridSettings.canvasBorderRadius}px</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button onClick={() => {
-              sessionStorage.setItem('previewComponents', JSON.stringify(components));
-              sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
-              window.open('/CodeMyPage/?preview=true', '_blank');
-            }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
-            <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
-            <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
-            <button onClick={() => setShowExportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg"><Download size={18} /> 导出HTML</button>
-          </div>
-        </div>
-        <div className={`flex-1 flex overflow-hidden transition-all ${showComponentEditor ? 'mr-80' : ''}`} onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); setShowComponentEditor(false); }}>
-          <ComponentPanel onAdd={handleAddComponent} />
-          <WorkArea 
+        <TopToolbar
+        gridSettings={{
+          dotSpacing: gridSettings.dotSpacing,
+          snapToGrid: gridSettings.snapToGrid,
+          dotGridBackground: gridSettings.dotGridBackground,
+          canvasBackground: gridSettings.canvasBackground,
+          canvasBorderRadius: gridSettings.canvasBorderRadius,
+        }}
+        onGridChange={handleGridChange}
+        onPreview={() => {
+          sessionStorage.setItem('previewComponents', JSON.stringify(components));
+          sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
+          window.open('/CodeMyPage/?preview=true', '_blank');
+        }}
+        onLoad={handleLoad}
+        onExport={() => setShowExportModal(true)}
+        showGridSettings={showGridSettings}
+        showBgSettings={showBgSettings}
+        showCanvasSettings={showCanvasSettings}
+        onToggleGridSettings={() => {
+          setShowGridSettings(!showGridSettings);
+          setShowBgSettings(false);
+          setShowCanvasSettings(false);
+        }}
+        onToggleBgSettings={() => {
+          setShowBgSettings(!showBgSettings);
+          setShowGridSettings(false);
+          setShowCanvasSettings(false);
+        }}
+        onToggleCanvasSettings={() => {
+          setShowCanvasSettings(!showCanvasSettings);
+          setShowGridSettings(false);
+          setShowBgSettings(false);
+        }}
+        autoSave={autoSave}
+        onToggleAutoSave={() => {
+          const newAutoSave = !autoSave;
+          setAutoSave(newAutoSave);
+          localStorage.setItem(AUTO_SAVE_KEY, String(newAutoSave));
+        }}
+        onReset={() => {
+           setShowResetConfirm(true);
+           setResetChecked(false);
+         }}
+      />
+      <div className={`flex-1 flex overflow-hidden transition-all ${showComponentEditor ? 'mr-80' : ''}`} onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); setShowComponentEditor(false); }}>
+        <ComponentPanel onAdd={handleAddComponent} />
+        <WorkArea 
             onClick={() => { setShowGridSettings(false); setShowBgSettings(false); setShowCanvasSettings(false); setShowComponentEditor(false); }}
             ref={workAreaRef}
             canvasRef={canvasRef}
@@ -618,11 +628,11 @@ ${jsContent}
           <>
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
               <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-lg border">
-                <button onClick={() => handleMoveUp(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="上移一层"><ArrowUp size={18} /></button>
-                <button onClick={() => handleMoveDown(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="下移一层"><ArrowDown size={18} /></button>
+                <button onClick={() => handleMoveUp(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="上移一层"><IconRenderer name="arrow-up-bold" size={18} /></button>
+                <button onClick={() => handleMoveDown(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="下移一层"><IconRenderer name="arrow-down-bold" size={18} /></button>
                 <div className="w-px h-6 bg-gray-200"></div>
-                <button onClick={() => handleDuplicate(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="复制"><Copy size={18} /></button>
-                <button onClick={() => handleDelete(selectedId || "")} className="p-2 hover:bg-red-50 text-red-500 rounded-full" title="删除"><Trash2 size={18} /></button>
+                <button onClick={() => handleDuplicate(selectedId || "")} className="p-2 hover:bg-gray-100 rounded-full" title="复制"><IconRenderer name="copy" size={18} /></button>
+                <button onClick={() => handleDelete(selectedId || "")} className="p-2 hover:bg-red-50 text-red-500 rounded-full" title="删除"><IconRenderer name="trash" size={18} /></button>
                 <div className="w-px h-6 bg-gray-200"></div>
                 <button 
                   onClick={() => setShowComponentEditor(!showComponentEditor)} 
@@ -662,6 +672,132 @@ ${jsContent}
           loading={exportLoading}
           error={exportError}
         />
+
+        {showResetConfirm && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+            }}
+            onClick={() => setShowResetConfirm(false)}
+          >
+            <div
+              style={{
+                background: 'white',
+                borderRadius: '14px',
+                padding: '24px',
+                width: '340px',
+                maxWidth: '90vw',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 59, 48, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <IconRenderer name="rotate-cw" size={22} color="#ff3b30" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: '#1d1d1f' }}>重新开始</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#86868b' }}>确定要清空所有内容吗？</p>
+                </div>
+              </div>
+
+              <div style={{
+                background: '#fff5f5',
+                border: '1px solid #ffd9d9',
+                borderRadius: '10px',
+                padding: '12px',
+                marginBottom: '16px',
+              }}>
+                <p style={{ margin: 0, fontSize: '13px', color: '#ff3b30', lineHeight: 1.5 }}>
+                  ⚠️ 此操作将清空所有组件和设置，且<span style={{ fontWeight: 600 }}>无法撤销</span>。请确认您的项目已导出或不再需要。
+                </p>
+              </div>
+
+              <label style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                cursor: 'pointer',
+                marginBottom: '20px',
+                padding: '10px',
+                background: resetChecked ? 'rgba(52, 199, 89, 0.08)' : '#f5f5f7',
+                borderRadius: '10px',
+                transition: 'all 0.2s',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={resetChecked}
+                  onChange={(e) => setResetChecked(e.target.checked)}
+                  style={{ marginTop: '2px', width: '18px', height: '18px', accentColor: '#34c759' }}
+                />
+                <span style={{ fontSize: '14px', color: '#1d1d1f', lineHeight: 1.4 }}>
+                  我已了解此操作的风险，确认要清空所有内容
+                </span>
+              </label>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: '#f5f5f7',
+                    color: '#1d1d1f',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => {
+                    if (resetChecked) {
+                      setComponents([]);
+                      setSelectedId(null);
+                      document.cookie = `${COOKIE_NAME}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+                      setShowResetConfirm(false);
+                    }
+                  }}
+                  disabled={!resetChecked}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: resetChecked ? '#ff3b30' : '#e8e8ed',
+                    color: resetChecked ? 'white' : '#8e8e93',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    cursor: resetChecked ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  确认清空
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -820,7 +956,7 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
           }}
           onPointerDown={(e) => { e.stopPropagation(); onDragStart && onDragStart(e as any, component.id); }}
         >
-          <Move size={10} color="white" />
+          <IconRenderer name="drag" size={10} color="white" />
         </div>
       )}
       {isSelected && (
@@ -851,7 +987,7 @@ const ExportModal: React.FC<{
       <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-xl font-bold text-gray-800">导出选项</h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full"><X size={20} /></button>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full"><IconRenderer name="x" size={20} /></button>
         </div>
         
         <div className="p-6 space-y-4">
@@ -861,7 +997,7 @@ const ExportModal: React.FC<{
           >
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Zap size={20} color="white" />
+                <IconRenderer name="zap" size={20} color="white" />
               </div>
               <div>
                 <h3 className="font-bold text-gray-800">导出完整HTML</h3>
@@ -879,7 +1015,7 @@ const ExportModal: React.FC<{
           >
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                <FileText size={20} color="white" />
+                <IconRenderer name="file-text" size={20} color="white" />
               </div>
               <div>
                 <h3 className="font-bold text-gray-800">导出PDF文件</h3>
@@ -888,6 +1024,24 @@ const ExportModal: React.FC<{
             </div>
             <p className="text-sm text-gray-600 ml-13">
               将当前页面导出为 PDF 文件，完全静态快照，所有交互功能不可用，但适合打印或存档。
+            </p>
+          </div>
+
+          <div 
+            className="p-4 border-2 border-gray-200 rounded-xl hover:border-green-500 cursor-pointer transition-colors bg-green-50/30"
+            onClick={() => onSelect('project')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                <IconRenderer name="file-text" size={20} color="white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">导出工程文件</h3>
+                <p className="text-sm text-gray-500">可导入的项目文件</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 ml-13">
+              导出 JSON 格式的工程文件，可以在其他设备或重新打开后通过导入功能恢复所有组件和设置。
             </p>
           </div>
         </div>

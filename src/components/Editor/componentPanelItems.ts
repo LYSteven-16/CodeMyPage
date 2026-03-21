@@ -5,31 +5,31 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'heading',
     label: '标题',
-    icon: 'Heading',
+    icon: 'heading',
     defaultProps: { level: 'h1', text: '标题文字', height: 56 }
   },
   {
     type: 'text',
     label: '文本',
-    icon: 'Type',
+    icon: 'type',
     defaultProps: { content: '这是段落文字，可以修改内容。', fontSize: 16, color: '#333333', height: 56 }
   },
   {
     type: 'image',
     label: '图片',
-    icon: 'Image',
+    icon: 'image',
     defaultProps: { src: 'https://picsum.photos/400/300', alt: '图片', width: 320, height: 240, borderRadius: 8 }
   },
   {
     type: 'button',
     label: '按钮',
-    icon: 'Square',
+    icon: 'square',
     defaultProps: { buttonText: '点击这里', bgColor: '#3b82f6', textColor: '#ffffff', borderRadius: 8, height: 44 }
   },
   {
     type: 'card',
     label: '卡片',
-    icon: 'CreditCard',
+    icon: 'credit-card',
     defaultProps: { 
       cardTitle: '卡片标题', 
       description: '这里是卡片的描述内容。',
@@ -41,7 +41,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'accordion',
     label: '折叠面板',
-    icon: 'ChevronDown',
+    icon: 'chevron-down',
     defaultProps: { accordionTitle: '点击展开', accordionContent: '这里是隐藏的内容。', height: 160 }
   },
   
@@ -49,7 +49,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'choice',
     label: '选择题',
-    icon: 'CheckCircle',
+    icon: 'check-circle',
     defaultProps: { 
       question: '请选择正确答案：', 
       options: ['选项 A', '选项 B', '选项 C', '选项 D'],
@@ -61,7 +61,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'fillBlank',
     label: '填空题',
-    icon: 'Input',
+    icon: 'input',
     defaultProps: {
       content: '世界上最深的海沟是___，深度约___米。',
       blanks: [
@@ -74,7 +74,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'trueFalse',
     label: '判断题',
-    icon: 'ToggleLeft',
+    icon: 'toggle-left',
     defaultProps: {
       statement: '地球是平的。',
       correctBool: false,
@@ -85,7 +85,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'sortable',
     label: '排序题',
-    icon: 'ArrowUpDown',
+    icon: 'arrow-up-down',
     defaultProps: {
       sortableItems: ['第一步', '第二步', '第三步', '第四步'],
       height: 160
@@ -96,7 +96,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'drawing',
     label: '画板',
-    icon: 'PenTool',
+    icon: 'pen-tool',
     defaultProps: {
       brushColor: '#000000',
       brushSize: 3,
@@ -108,7 +108,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'checklist',
     label: '清单',
-    icon: 'ListTodo',
+    icon: 'list-todo',
     defaultProps: {
       checklistItems: [
         { id: '1', text: '完成学习目标 1', checked: false },
@@ -123,7 +123,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'tabs',
     label: '标签页',
-    icon: 'FolderTabs',
+    icon: 'folder-tabs',
     defaultProps: {
       tabs: [
         { id: '1', label: '标签 1', content: '内容 1' },
@@ -137,7 +137,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'timeline',
     label: '时间线',
-    icon: 'Clock',
+    icon: 'clock',
     defaultProps: {
       steps: [
         { id: '1', title: '第一步', description: '了解基本概念' },
@@ -151,7 +151,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'progress',
     label: '进度条',
-    icon: 'BarChart3',
+    icon: 'bar-chart',
     defaultProps: {
       progress: 65,
       showPercent: true,
@@ -164,7 +164,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'video',
     label: '视频',
-    icon: 'Video',
+    icon: 'video',
     defaultProps: {
       videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
       poster: 'https://picsum.photos/400/225',
@@ -175,7 +175,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'audio',
     label: '音频',
-    icon: 'Volume2',
+    icon: 'volume',
     defaultProps: {
       audioUrl: '',
       height: 72
@@ -184,7 +184,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'quote',
     label: '引用',
-    icon: 'Quote',
+    icon: 'quote',
     defaultProps: {
       quoteText: '这是一段引用的文字，可以是名言警句或重要知识点。',
       quoteAuthor: '—— 作者',
@@ -195,7 +195,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'code',
     label: '代码',
-    icon: 'Code',
+    icon: 'code',
     defaultProps: {
       code: 'console.log("Hello!");',
       language: 'javascript',
@@ -206,7 +206,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'table',
     label: '表格',
-    icon: 'Table',
+    icon: 'table',
     defaultProps: {
       tableHeaders: ['名称', '内容', '备注'],
       tableData: [
@@ -221,7 +221,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'tag',
     label: '标签',
-    icon: 'Tag',
+    icon: 'tag',
     defaultProps: {
       tagText: '重点',
       tagStyle: 'info',
@@ -231,7 +231,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'alert',
     label: '提示框',
-    icon: 'AlertCircle',
+    icon: 'alert-circle',
     defaultProps: {
       alertType: 'info',
       alertTitle: '提示标题',
@@ -244,7 +244,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'answerSheet',
     label: '答题卡',
-    icon: 'ClipboardCheck',
+    icon: 'clipboard-check',
     defaultProps: {
       totalQuestions: 10,
       answeredQuestions: [],
@@ -256,7 +256,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'answerExplanation',
     label: '答案解析',
-    icon: 'BookOpen',
+    icon: 'book-open',
     defaultProps: {
       explanationTitle: '答案解析',
       explanationContent: '这是一道关于光合作用的题目。正确答案是B，因为光合作用需要在光照条件下进行...',
@@ -270,7 +270,7 @@ export const componentPanelItems: ComponentPanelItem[] = [
   {
     type: 'scoreDisplay',
     label: '得分显示',
-    icon: 'Trophy',
+    icon: 'trophy',
     defaultProps: {
       score: 85,
       totalScore: 100,

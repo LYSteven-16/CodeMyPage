@@ -31,7 +31,10 @@ export type WidgetType =
   // 学习反馈类
   | 'answerSheet'
   | 'answerExplanation'
-  | 'scoreDisplay';
+  | 'scoreDisplay'
+  // 布局类
+  | 'divider'
+  | 'spacer';
 
 // 组件属性
 export interface WidgetProps {
@@ -199,6 +202,17 @@ export interface WidgetProps {
   feedbackMessage?: string;
   feedbackType?: 'excellent' | 'good' | 'average' | 'needsImprovement';
   showGrade?: boolean;
+  
+  // 通用扩展
+  padding?: number | { top?: number; right?: number; bottom?: number; left?: number };
+  label?: string;
+  image?: string;
+  
+  // 时间线（统一名称）
+  timelineItems?: { id?: string; title: string; description?: string; color?: string }[];
+  
+  // 折叠面板（统一名称）
+  accordionItems?: { title: string; content: string }[];
 }
 
 // 组件面板项

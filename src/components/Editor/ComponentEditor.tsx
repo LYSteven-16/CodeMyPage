@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { WidgetProps } from '../../types';
-import { Settings, X } from 'lucide-react';
+import { IconRenderer } from '../NewStyleRenderers';
 
 interface Props {
   component: WidgetProps;
@@ -274,11 +274,11 @@ export function ComponentEditor({ component, onUpdate, onClose }: Props) {
     <div className="fixed top-14 right-0 bottom-0 w-80 bg-white border-l shadow-lg z-40 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-2">
-          <Settings size={18} />
+          <IconRenderer name="settings" size={18} />
           <span className="font-medium">组件属性</span>
         </div>
         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-          <X size={18} />
+          <IconRenderer name="x" size={18} />
         </button>
       </div>
       
