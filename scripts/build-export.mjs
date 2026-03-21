@@ -1,57 +1,62 @@
-import { build } from 'vite'
-import path from 'path'
+import { spawn } from 'child_process'
 import fs from 'fs'
-import { fileURLToPath } from 'url'
+import path from 'path'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootDir = path.resolve(__dirname, '..')
+const distDir = path.join(process.cwd(), 'dist')
+const exportDistDir = path.join(process.cwd(), 'dist-export')
 
 async function buildExport() {
-  console.log('开始构建导出文件...')
+  console.log('Building export assets...')
+  
+  await new Promise((resolve, reject) => {
+    const buildProcess = spawn('npx', ['vite', 'build', '--config', 'vite.export.config.ts'], {
+      shell: true,
+      cwd: process.cwd(),
+      stdio: 'inherit'
+    })
 
-  const exportOutDir = path.join(rootDir, 'dist-export')
+    buildProcess.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error('Export build failed'))
+      } else {
+        resolve()
+      }
+    })
 
-  if (!fs.existsSync(exportOutDir)) {
-    fs.mkdirSync(exportOutDir, { recursive: true })
-  }
-
-  const viteConfigPath = path.join(rootDir, 'vite.export.config.ts')
-
-  if (!fs.existsSync(viteConfigPath)) {
-    throw new Error('vite.export.config.ts 不存在')
-  }
-
-  console.log('运行 Vite 构建...')
-  await build({
-    configFile: viteConfigPath,
-    mode: 'production'
+    buildProcess.on('error', (err) => {
+      reject(err)
+    })
   })
 
-  const assetsDir = path.join(exportOutDir, 'assets')
-  if (!fs.existsSync(assetsDir)) {
-    throw new Error('构建失败：assets 目录不存在')
+  if (!fs.existsSync(exportDistDir)) {
+    fs.mkdirSync(exportDistDir, { recursive: true })
   }
 
-  const jsFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'))
-  const cssFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.css'))
+  const exportAssetsDir = path.join(exportDistDir, 'assets')
+  const mainAssetsDir = path.join(distDir, 'assets')
 
-  if (jsFiles.length === 0) {
-    throw new Error('构建失败：没有生成 JS 文件')
+  if (fs.existsSync(exportAssetsDir)) {
+    const files = fs.readdirSync(exportAssetsDir)
+    
+    for (const file of files) {
+      const src = path.join(exportAssetsDir, file)
+      const dest = path.join(mainAssetsDir, file)
+      fs.copyFileSync(src, dest)
+      console.log('Copied: ' + file)
+    }
   }
 
-  console.log(`构建完成！生成了 ${jsFiles.length} 个 JS 文件`)
-
-  return {
-    jsFile: jsFiles[0],
-    cssFile: cssFiles[0] || null,
-    assetsDir
+  const indexHtml = path.join(exportDistDir, 'export-entry.html')
+  if (fs.existsSync(indexHtml)) {
+    const destIndexHtml = path.join(distDir, 'export-entry.html')
+    fs.copyFileSync(indexHtml, destIndexHtml)
+    console.log('Copied: export-entry.html')
   }
+
+  console.log('Export assets built and copied to dist folder')
 }
 
-export { buildExport, rootDir }
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  buildExport()
-    .then(() => console.log('构建成功！'))
-    .catch(err => { console.error('构建失败:', err); process.exit(1) })
-}
+buildExport().catch(err => {
+  console.error('Build failed:', err)
+  process.exit(1)
+})

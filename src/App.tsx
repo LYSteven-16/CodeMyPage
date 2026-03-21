@@ -201,18 +201,75 @@ function App() {
         title: '我的网页'
       };
       
-      const response = await fetch('/CodeMyPage/api/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectData, type: 'interactive' })
-      });
+      const isProduction = import.meta.env.PROD;
+      let html = '';
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `导出失败: ${response.status}`);
+      if (isProduction) {
+        const jsResponse = await fetch('/CodeMyPage/assets/export-entry.js');
+        if (!jsResponse.ok) {
+          throw new Error('无法获取导出资源，请确保已构建导出组件');
+        }
+        const jsContent = await jsResponse.text();
+        
+        let cssContent = '';
+        try {
+          const cssResponse = await fetch('/CodeMyPage/assets/export-entry.css');
+          if (cssResponse.ok) {
+            cssContent = await cssResponse.text();
+          }
+        } catch (e) {
+          console.warn('CSS not found, continuing without it');
+        }
+        
+        const title = projectData.title || '我的网页';
+        html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { 
+      margin: 0; 
+      min-height: 100vh; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .page-container { 
+      position: relative; 
+      margin: 0 auto; 
+    }
+  </style>
+  <style>
+${cssContent}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    window.__PROJECT_DATA__ = ${JSON.stringify(projectData)};
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script>
+${jsContent}
+  </script>
+</body>
+</html>`;
+      } else {
+        const response = await fetch('/CodeMyPage/api/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectData, type: 'interactive' })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `导出失败: ${response.status}`);
+        }
+        
+        html = await response.text();
       }
-      
-      const html = await response.text();
       
       const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);

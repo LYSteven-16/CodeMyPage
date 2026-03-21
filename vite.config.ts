@@ -66,22 +66,9 @@ async function buildExportApp(): Promise<void> {
   })
 }
 
-function generateInteractiveHTML(projectData: ProjectData): string {
+function generateInteractiveHTML(projectData: ProjectData, jsContent: string, cssContent: string): string {
   const title = projectData.title || '我的网页'
   const projectDataJson = JSON.stringify(projectData)
-
-  const assetsDir = path.join(process.cwd(), 'dist-export', 'assets')
-  const jsFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'))
-  const cssFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.css'))
-
-  if (jsFiles.length === 0) {
-    throw new Error('JS 构建产物不存在')
-  }
-
-  const jsContent = fs.readFileSync(path.join(assetsDir, jsFiles[0]), 'utf-8')
-  const cssContent = cssFiles.length > 0 
-    ? fs.readFileSync(path.join(assetsDir, cssFiles[0]), 'utf-8')
-    : ''
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -119,6 +106,26 @@ ${jsContent}
 </html>`
 }
 
+function getExportAssets(): { jsContent: string; cssContent: string } {
+  const assetsDir = path.join(process.cwd(), 'dist-export', 'assets')
+  if (!fs.existsSync(assetsDir)) {
+    throw new Error('导出构建产物不存在，请先运行开发服务器')
+  }
+  const jsFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'))
+  const cssFiles = fs.readdirSync(assetsDir).filter(f => f.endsWith('.css'))
+
+  if (jsFiles.length === 0) {
+    throw new Error('JS 构建产物不存在')
+  }
+
+  const jsContent = fs.readFileSync(path.join(assetsDir, jsFiles[0]), 'utf-8')
+  const cssContent = cssFiles.length > 0 
+    ? fs.readFileSync(path.join(assetsDir, cssFiles[0]), 'utf-8')
+    : ''
+
+  return { jsContent, cssContent }
+}
+
 function exportPlugin(): Plugin {
   return {
     name: 'vite-plugin-export',
@@ -139,7 +146,8 @@ function exportPlugin(): Plugin {
             const { projectData, type } = JSON.parse(body) as { projectData: ProjectData; type: string }
             
             await buildExportApp()
-            const html = generateInteractiveHTML(projectData)
+            const { jsContent, cssContent } = getExportAssets()
+            const html = generateInteractiveHTML(projectData, jsContent, cssContent)
 
             const filename = type === 'github' ? 'github-pages.html' : 'my-page-interactive.html'
             res.setHeader('Content-Type', 'text/html')
@@ -152,6 +160,25 @@ function exportPlugin(): Plugin {
             res.end(JSON.stringify({ error: (error as Error).message || String(error) }))
           }
         })
+      })
+
+      server.middlewares.use(base + 'api/export-assets', async (req: IncomingMessage, res: ServerResponse) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: 'Method Not Allowed' }))
+          return
+        }
+
+        try {
+          const { jsContent, cssContent } = getExportAssets()
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ jsContent, cssContent }))
+        } catch (error) {
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: (error as Error).message || String(error) }))
+        }
       })
     }
   }
