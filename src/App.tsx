@@ -211,6 +211,12 @@ ${jsContent}
       setExportError(null);
 
       const { jsPDF } = await import('jspdf');
+      const { default: html2canvas } = await import('html2canvas');
+
+      const canvasHeight = Math.max(
+        CANVAS_MIN_HEIGHT,
+        ...components.map((c) => (c.y || 0) + (c.height || 200) + 100)
+      );
 
       const container = document.createElement('div');
       container.style.cssText = `
@@ -218,7 +224,7 @@ ${jsContent}
         left: -9999px;
         top: 0;
         width: ${CANVAS_WIDTH + 40}px;
-        min-height: 100vh;
+        min-height: ${canvasHeight + 40}px;
         background: ${gridSettings.dotGridBackground};
         padding: 20px;
         box-sizing: border-box;
@@ -228,7 +234,7 @@ ${jsContent}
       canvas.style.cssText = `
         position: relative;
         width: ${CANVAS_WIDTH}px;
-        min-height: 1600px;
+        min-height: ${canvasHeight}px;
         background: ${gridSettings.canvasBackground};
         border-radius: ${gridSettings.canvasBorderRadius}px;
         margin: 0 auto;
@@ -254,31 +260,35 @@ ${jsContent}
       );
 
       await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px'
+      const captureCanvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: gridSettings.dotGridBackground,
+        onclone: (clonedDoc) => {
+          const style = clonedDoc.createElement('style');
+          style.textContent = `
+            * { transform: none !important; }
+            body { margin: 0 !important; padding: 0 !important; }
+          `;
+          clonedDoc.head.appendChild(style);
+        }
       });
-
-      await new Promise<void>((resolve) => {
-         pdf.html(container, {
-           callback: () => {
-             pdf.save('my-page.pdf');
-             resolve();
-           },
-           margin: 0,
-           html2canvas: {
-             scale: 2,
-             useCORS: true,
-             logging: false,
-             backgroundColor: gridSettings.dotGridBackground
-           }
-         });
-       });
 
       root.unmount();
       document.body.removeChild(container);
+
+      const pdf = new jsPDF({
+        orientation: captureCanvas.width > captureCanvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [captureCanvas.width, captureCanvas.height]
+      });
+
+      const imgData = captureCanvas.toDataURL('image/jpeg', 0.9);
+      pdf.addImage(imgData, 'JPEG', 0, 0, captureCanvas.width, captureCanvas.height);
+      pdf.save('my-page.pdf');
 
       setExportLoading(false);
       setShowExportModal(false);
