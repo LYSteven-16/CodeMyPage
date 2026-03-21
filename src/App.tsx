@@ -897,7 +897,7 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
     height: '100%'
   };
 
-  const needsDragHandle = component.type === 'image' || component.type === 'button';
+  const needsDragHandle = false;
 
   const handleComponentPointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
