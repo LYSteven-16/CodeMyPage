@@ -211,7 +211,6 @@ ${jsContent}
       setExportError(null);
 
       const { jsPDF } = await import('jspdf');
-      const { default: html2canvas } = await import('html2canvas');
 
       const container = document.createElement('div');
       container.style.cssText = `
@@ -257,26 +256,28 @@ ${jsContent}
       await document.fonts.ready;
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const captureCanvas = await html2canvas(container, {
-        scale: 4,
-        useCORS: true,
-        logging: false,
-        backgroundColor: gridSettings.dotGridBackground
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px'
+      });
+
+      await new Promise<void>((resolve) => {
+        pdf.html(container, {
+          callback: () => {
+            pdf.save('my-page.pdf');
+            resolve();
+          },
+          margin: 0,
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false
+          }
+        });
       });
 
       root.unmount();
       document.body.removeChild(container);
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [captureCanvas.width, captureCanvas.height]
-      });
-
-      const imgData = captureCanvas.toDataURL('image/jpeg', 0.92);
-      pdf.addImage(imgData, 'JPEG', 0, 0, captureCanvas.width, captureCanvas.height);
-
-      pdf.save('my-page.pdf');
 
       setExportLoading(false);
       setShowExportModal(false);
