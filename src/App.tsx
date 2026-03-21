@@ -226,20 +226,28 @@ ${jsContent}
 
       const tempContainer = document.createElement('div');
       tempContainer.id = 'pdf-export-container';
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.minHeight = '100vh';
-      tempContainer.style.background = gridSettings.dotGridBackground;
-      tempContainer.style.padding = '20px';
+      tempContainer.style.cssText = `
+        position: fixed !important;
+        left: -9999px !important;
+        top: 0 !important;
+        margin: 0 !important;
+        padding: 20px !important;
+        min-height: 100vh !important;
+        background: ${gridSettings.dotGridBackground} !important;
+        box-sizing: border-box !important;
+      `;
 
       const canvasContainer = document.createElement('div');
-      canvasContainer.style.position = 'relative';
-      canvasContainer.style.width = `${CANVAS_WIDTH}px`;
-      canvasContainer.style.minHeight = `${canvasHeight}px`;
-      canvasContainer.style.background = gridSettings.canvasBackground;
-      canvasContainer.style.borderRadius = `${gridSettings.canvasBorderRadius}px`;
-      canvasContainer.style.margin = '0 auto';
+      canvasContainer.style.cssText = `
+        position: relative !important;
+        width: ${CANVAS_WIDTH}px !important;
+        min-height: ${canvasHeight}px !important;
+        background: ${gridSettings.canvasBackground} !important;
+        border-radius: ${gridSettings.canvasBorderRadius}px !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+      `;
 
       tempContainer.appendChild(canvasContainer);
       document.body.appendChild(tempContainer);
@@ -249,9 +257,9 @@ ${jsContent}
         <>
           {components.map((comp: WidgetProps) => {
             const style: React.CSSProperties = {
-              position: 'absolute',
-              left: comp.x || 0,
-              top: comp.y || 0,
+              position: 'absolute' as const,
+              left: (comp.x || 0),
+              top: (comp.y || 0),
               width: comp.width || 300,
               height: comp.height || 200
             };
