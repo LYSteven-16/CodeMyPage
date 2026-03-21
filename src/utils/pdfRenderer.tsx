@@ -16,10 +16,11 @@ export async function generatePDFDirect(
   const { createRoot } = await import('react-dom/client');
   const { ComponentRenderer } = await import('../components/ComponentRenderer');
   
-  const CANVAS_WIDTH = 800;
+  const CANVAS_WIDTH = 1000;
+  const CANVAS_MIN_HEIGHT = 1600;
   
   const canvasHeight = Math.max(
-    1600,
+    CANVAS_MIN_HEIGHT,
     ...components.map((c) => (c.y || 0) + (c.height || 200) + 100)
   );
   
