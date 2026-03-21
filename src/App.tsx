@@ -268,8 +268,21 @@ ${jsContent}
         useCORS: true,
         logging: false,
         backgroundColor: gridSettings.dotGridBackground,
-        height: canvasHeight + 40,
-        windowHeight: canvasHeight + 40
+        foreignObjectRendering: false,
+        onclone: (clonedDoc) => {
+          const clonedCanvas = clonedDoc.body.querySelector('[style*="position: relative"]');
+          if (clonedCanvas) {
+            clonedCanvas.setAttribute('style', `
+              position: relative;
+              width: ${CANVAS_WIDTH}px;
+              min-height: ${canvasHeight}px;
+              height: ${canvasHeight}px;
+              background: ${gridSettings.canvasBackground};
+              border-radius: ${gridSettings.canvasBorderRadius}px;
+              margin: 0 auto;
+            `);
+          }
+        }
       });
 
       root.unmount();
