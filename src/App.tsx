@@ -273,8 +273,8 @@ ${jsContent}
         format: [captureCanvas.width, captureCanvas.height]
       });
 
-      const imgData = captureCanvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, captureCanvas.width, captureCanvas.height);
+      const imgData = captureCanvas.toDataURL('image/jpeg', 0.92);
+      pdf.addImage(imgData, 'JPEG', 0, 0, captureCanvas.width, captureCanvas.height);
 
       pdf.save('my-page.pdf');
 
