@@ -1,4 +1,5 @@
 import React, { useState, useRef, forwardRef, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import { ComponentRenderer } from './components/ComponentRenderer';
@@ -209,68 +210,71 @@ ${jsContent}
       setExportLoading(true);
       setExportError(null);
 
-      sessionStorage.setItem('previewComponents', JSON.stringify(components));
-      sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
+      const { jsPDF } = await import('jspdf');
+      const { default: html2canvas } = await import('html2canvas');
 
-      const previewFrame = document.createElement('iframe');
-      previewFrame.style.cssText = `
+      const container = document.createElement('div');
+      container.style.cssText = `
         position: fixed;
-        left: 0;
+        left: -9999px;
         top: 0;
         width: ${CANVAS_WIDTH + 40}px;
-        height: 100vh;
-        border: none;
-        z-index: 9999;
+        min-height: 100vh;
+        background: ${gridSettings.dotGridBackground};
+        padding: 20px;
+        box-sizing: border-box;
       `;
-      document.body.appendChild(previewFrame);
 
-      const frameWindow = previewFrame.contentWindow;
-      if (!frameWindow) {
-        throw new Error('无法创建预览框架');
-      }
+      const canvas = document.createElement('div');
+      canvas.style.cssText = `
+        position: relative;
+        width: ${CANVAS_WIDTH}px;
+        min-height: 1600px;
+        background: ${gridSettings.canvasBackground};
+        border-radius: ${gridSettings.canvasBorderRadius}px;
+        margin: 0 auto;
+      `;
 
-      await new Promise<void>((resolve) => {
-        previewFrame.onload = () => resolve();
-        previewFrame.src = `?preview=true&pdf=true&t=${Date.now()}`;
-      });
+      container.appendChild(canvas);
+      document.body.appendChild(container);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const root = createRoot(canvas);
+      root.render(
+        <>
+          {components.map((comp: WidgetProps) => {
+            const style: React.CSSProperties = {
+              position: 'absolute',
+              left: comp.x || 0,
+              top: comp.y || 0,
+              width: comp.width || 300,
+              height: comp.height || 200
+            };
+            return <ComponentRenderer key={comp.id} component={comp} style={style} mode="preview" />;
+          })}
+        </>
+      );
 
-      const frameDoc = frameWindow.document;
-      const bodyElement = frameDoc.body;
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      const { default: html2canvas } = await import('html2canvas');
-      const { jsPDF } = await import('jspdf');
-
-      await frameWindow.document.fonts.ready;
-
-      const canvas = await html2canvas(bodyElement, {
+      const captureCanvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
         logging: false,
-        onclone: (_clonedDoc, clonedBody) => {
-          const allElements = clonedBody.querySelectorAll('*');
-          allElements.forEach(el => {
-            const htmlEl = el as HTMLElement;
-            htmlEl.style.marginTop = '0';
-            htmlEl.style.marginBottom = '0';
-            htmlEl.style.paddingTop = '0';
-            htmlEl.style.paddingBottom = '0';
-            htmlEl.style.transform = 'none';
-          });
-        }
+        backgroundColor: gridSettings.dotGridBackground
       });
 
-      document.body.removeChild(previewFrame);
+      root.unmount();
+      document.body.removeChild(container);
 
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'px',
-        format: [canvas.width, canvas.height]
+        format: [captureCanvas.width, captureCanvas.height]
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      const imgData = captureCanvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, captureCanvas.width, captureCanvas.height);
 
       pdf.save('my-page.pdf');
 
