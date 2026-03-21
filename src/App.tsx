@@ -213,13 +213,18 @@ ${jsContent}
       const { jsPDF } = await import('jspdf');
       const { default: html2canvas } = await import('html2canvas');
 
+      const canvasHeight = Math.max(
+        CANVAS_MIN_HEIGHT,
+        ...components.map((c) => (c.y || 0) + (c.height || 200) + 100)
+      );
+
       const container = document.createElement('div');
       container.style.cssText = `
         position: fixed;
         left: -9999px;
         top: 0;
         width: ${CANVAS_WIDTH + 40}px;
-        min-height: 100vh;
+        min-height: ${canvasHeight + 40}px;
         background: ${gridSettings.dotGridBackground};
         padding: 20px;
         box-sizing: border-box;
@@ -229,7 +234,8 @@ ${jsContent}
       canvas.style.cssText = `
         position: relative;
         width: ${CANVAS_WIDTH}px;
-        min-height: 1600px;
+        min-height: ${canvasHeight}px;
+        height: ${canvasHeight}px;
         background: ${gridSettings.canvasBackground};
         border-radius: ${gridSettings.canvasBorderRadius}px;
         margin: 0 auto;
@@ -261,7 +267,9 @@ ${jsContent}
         scale: 4,
         useCORS: true,
         logging: false,
-        backgroundColor: gridSettings.dotGridBackground
+        backgroundColor: gridSettings.dotGridBackground,
+        height: canvasHeight + 40,
+        windowHeight: canvasHeight + 40
       });
 
       root.unmount();
