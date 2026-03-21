@@ -270,19 +270,39 @@ ${jsContent}
         backgroundColor: gridSettings.dotGridBackground,
         foreignObjectRendering: false,
         onclone: (clonedDoc) => {
-          const clonedCanvas = clonedDoc.body.querySelector('[style*="position: relative"]');
-          if (clonedCanvas) {
-            clonedCanvas.setAttribute('style', `
-              position: relative;
-              width: ${CANVAS_WIDTH}px;
-              min-height: ${canvasHeight}px;
-              height: ${canvasHeight}px;
-              background: ${gridSettings.canvasBackground};
-              border-radius: ${gridSettings.canvasBorderRadius}px;
-              margin: 0 auto;
-            `);
-          }
-        }
+           const clonedContainer = clonedDoc.body.querySelector('[style*="position: fixed"]');
+           if (clonedContainer) {
+             clonedContainer.setAttribute('style', `
+               position: fixed;
+               left: -9999px;
+               top: 0;
+               width: ${CANVAS_WIDTH + 40}px;
+               min-height: ${canvasHeight + 40}px;
+               height: ${canvasHeight + 40}px;
+               background: ${gridSettings.dotGridBackground};
+               padding: 20px;
+               box-sizing: border-box;
+             `);
+             
+             const clonedCanvas = clonedContainer.querySelector('[style*="position: relative"]');
+             if (clonedCanvas) {
+               clonedCanvas.setAttribute('style', `
+                 position: relative;
+                 width: ${CANVAS_WIDTH}px;
+                 min-height: ${canvasHeight}px;
+                 height: ${canvasHeight}px;
+                 background: ${gridSettings.canvasBackground};
+                 border-radius: ${gridSettings.canvasBorderRadius}px;
+                 margin: 0 auto;
+               `);
+             }
+             
+             const allChildren = clonedCanvas?.querySelectorAll('*');
+             allChildren?.forEach(child => {
+               child.setAttribute('style', (child.getAttribute('style') || '') + '; position: absolute !important;');
+             });
+           }
+         }
       });
 
       root.unmount();
