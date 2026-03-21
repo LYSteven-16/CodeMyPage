@@ -280,6 +280,14 @@ ${jsContent}
           const clonedContainer = clonedDoc.getElementById('pdf-export-container');
           if (clonedContainer) {
             clonedContainer.style.visibility = 'visible';
+            const allElements = clonedContainer.querySelectorAll('*');
+            allElements.forEach(el => {
+              const htmlEl = el as HTMLElement;
+              htmlEl.style.lineHeight = 'normal';
+              htmlEl.style.verticalAlign = 'top';
+              htmlEl.style.marginTop = '0';
+              htmlEl.style.paddingTop = '0';
+            });
           }
         }
       });
