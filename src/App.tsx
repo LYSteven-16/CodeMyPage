@@ -224,22 +224,12 @@ ${jsContent}
         ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200)
       );
 
-      const tempContainer = document.createElement('div');
-      tempContainer.id = 'pdf-export-container';
-      tempContainer.style.cssText = `
+      const canvasContainer = document.createElement('div');
+      canvasContainer.id = 'pdf-canvas-container';
+      canvasContainer.style.cssText = `
         position: fixed !important;
         left: -9999px !important;
         top: 0 !important;
-        margin: 0 !important;
-        padding: 20px !important;
-        min-height: 100vh !important;
-        background: ${gridSettings.dotGridBackground} !important;
-        box-sizing: border-box !important;
-      `;
-
-      const canvasContainer = document.createElement('div');
-      canvasContainer.style.cssText = `
-        position: relative !important;
         width: ${CANVAS_WIDTH}px !important;
         min-height: ${canvasHeight}px !important;
         background: ${gridSettings.canvasBackground} !important;
@@ -249,8 +239,7 @@ ${jsContent}
         overflow: visible !important;
       `;
 
-      tempContainer.appendChild(canvasContainer);
-      document.body.appendChild(tempContainer);
+      document.body.appendChild(canvasContainer);
 
       const root = createRoot(canvasContainer);
       root.render(
@@ -269,31 +258,24 @@ ${jsContent}
       );
 
       await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      const canvas = await html2canvas(tempContainer, {
+      const canvas = await html2canvas(canvasContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: gridSettings.dotGridBackground,
+        backgroundColor: gridSettings.canvasBackground,
         onclone: (clonedDoc) => {
-          const clonedContainer = clonedDoc.getElementById('pdf-export-container');
+          const clonedContainer = clonedDoc.getElementById('pdf-canvas-container');
           if (clonedContainer) {
             clonedContainer.style.visibility = 'visible';
-            const allElements = clonedContainer.querySelectorAll('*');
-            allElements.forEach(el => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.lineHeight = 'normal';
-              htmlEl.style.verticalAlign = 'top';
-              htmlEl.style.marginTop = '0';
-              htmlEl.style.paddingTop = '0';
-            });
+            clonedContainer.style.left = '0';
           }
         }
       });
 
       root.unmount();
-      document.body.removeChild(tempContainer);
+      document.body.removeChild(canvasContainer);
 
       const imgData = canvas.toDataURL('image/png');
       const pdfHeight = (canvas.height * CANVAS_WIDTH) / canvas.width;
