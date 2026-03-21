@@ -247,7 +247,18 @@ ${jsContent}
       const canvas = await html2canvas(bodyElement, {
         scale: 2,
         useCORS: true,
-        logging: false
+        logging: false,
+        onclone: (_clonedDoc, clonedBody) => {
+          const allElements = clonedBody.querySelectorAll('*');
+          allElements.forEach(el => {
+            const htmlEl = el as HTMLElement;
+            htmlEl.style.marginTop = '0';
+            htmlEl.style.marginBottom = '0';
+            htmlEl.style.paddingTop = '0';
+            htmlEl.style.paddingBottom = '0';
+            htmlEl.style.transform = 'none';
+          });
+        }
       });
 
       document.body.removeChild(previewFrame);
