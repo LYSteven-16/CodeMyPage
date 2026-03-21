@@ -75,14 +75,20 @@ function App() {
       lastTouchEnd = now;
     };
     
+    const preventPullRefresh = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    
     document.addEventListener('touchstart', preventTouchGestures, { passive: false });
     document.addEventListener('touchmove', preventTouchGestures, { passive: false });
     document.addEventListener('touchend', preventDoubleTap, { passive: false });
+    document.addEventListener('touchmove', preventPullRefresh, { passive: false });
     
     return () => {
       document.removeEventListener('touchstart', preventTouchGestures);
       document.removeEventListener('touchmove', preventTouchGestures);
       document.removeEventListener('touchend', preventDoubleTap);
+      document.removeEventListener('touchmove', preventPullRefresh);
     };
   }, []);
 

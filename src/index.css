@@ -12,4 +12,14 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+  touch-action: pan-y pinch-zoom;
+}
+
+html {
+  overscroll-behavior: none;
+  overflow: hidden;
+  height: 100%;
 }
