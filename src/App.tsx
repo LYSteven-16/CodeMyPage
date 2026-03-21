@@ -1,5 +1,4 @@
 import React, { useState, useRef, forwardRef, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
 import { ComponentRenderer } from './components/ComponentRenderer';
@@ -211,7 +210,6 @@ ${jsContent}
       setExportError(null);
 
       const { jsPDF } = await import('jspdf');
-      const html2canvas = (await import('html2canvas')).default;
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -219,63 +217,55 @@ ${jsContent}
         format: [CANVAS_WIDTH, CANVAS_MIN_HEIGHT]
       });
 
-      const canvasHeight = Math.max(
-        CANVAS_MIN_HEIGHT,
-        ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200)
-      );
+      sessionStorage.setItem('previewComponents', JSON.stringify(components));
+      sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
 
-      const canvasContainer = document.createElement('div');
-      canvasContainer.id = 'pdf-canvas-container';
-      canvasContainer.style.cssText = `
-        position: fixed !important;
-        left: -9999px !important;
-        top: 0 !important;
-        width: ${CANVAS_WIDTH}px !important;
-        min-height: ${canvasHeight}px !important;
-        background: ${gridSettings.canvasBackground} !important;
-        border-radius: ${gridSettings.canvasBorderRadius}px !important;
-        margin: 0 auto !important;
-        box-sizing: border-box !important;
-        overflow: visible !important;
+      const previewFrame = document.createElement('iframe');
+      previewFrame.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: ${CANVAS_WIDTH + 40}px;
+        height: 100vh;
+        border: none;
       `;
+      previewFrame.id = 'pdf-preview-frame';
 
-      document.body.appendChild(canvasContainer);
+      document.body.appendChild(previewFrame);
 
-      const root = createRoot(canvasContainer);
-      root.render(
-        <>
-          {components.map((comp: WidgetProps) => {
-            const style: React.CSSProperties = {
-              position: 'absolute' as const,
-              left: (comp.x || 0),
-              top: (comp.y || 0),
-              width: comp.width || 300,
-              height: comp.height || 200
-            };
-            return <ComponentRenderer key={comp.id} component={comp} style={style} mode="preview" />;
-          })}
-        </>
-      );
+      const frameWindow = previewFrame.contentWindow;
+      if (!frameWindow) {
+        throw new Error('无法创建预览框架');
+      }
 
-      await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise<void>((resolve) => {
+        previewFrame.onload = () => resolve();
+        previewFrame.src = `?preview=true&pdf=true&t=${Date.now()}`;
+      });
 
-      const canvas = await html2canvas(canvasContainer, {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const frameDoc = frameWindow.document;
+      const canvasElement = frameDoc.querySelector('div[style*="position: relative"]') as HTMLElement;
+
+      if (!canvasElement) {
+        throw new Error('未找到画布元素');
+      }
+
+      const { default: html2canvas } = await import('html2canvas');
+
+      await frameWindow.document.fonts.ready;
+
+      const canvas = await html2canvas(canvasElement, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: gridSettings.canvasBackground,
-        onclone: (clonedDoc) => {
-          const clonedContainer = clonedDoc.getElementById('pdf-canvas-container');
-          if (clonedContainer) {
-            clonedContainer.style.visibility = 'visible';
-            clonedContainer.style.left = '0';
-          }
-        }
+        width: CANVAS_WIDTH,
+        windowWidth: CANVAS_WIDTH + 40
       });
 
-      root.unmount();
-      document.body.removeChild(canvasContainer);
+      document.body.removeChild(previewFrame);
 
       const imgData = canvas.toDataURL('image/png');
       const pdfHeight = (canvas.height * CANVAS_WIDTH) / canvas.width;
