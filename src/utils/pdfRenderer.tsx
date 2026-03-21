@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { jsPDF } from 'jspdf';
-import { svg2pdf } from 'svg2pdf.js';
+import 'svg2pdf.js';
 import { ComponentRenderer } from '../components/ComponentRenderer';
 import type { WidgetProps } from '../types';
 
@@ -102,9 +102,9 @@ export async function generateVectorPDF(
     orientation: 'portrait',
     unit: 'pt',
     format: [CANVAS_WIDTH + 40, canvasHeight + 40]
-  });
+  }) as any;
 
-  await svg2pdf(svg, pdf, {
+  await pdf.svg(svg, {
     x: 0,
     y: 0,
     width: CANVAS_WIDTH + 40,
