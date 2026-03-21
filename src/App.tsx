@@ -75,20 +75,14 @@ function App() {
       lastTouchEnd = now;
     };
     
-    const preventPullRefresh = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-    
     document.addEventListener('touchstart', preventTouchGestures, { passive: false });
     document.addEventListener('touchmove', preventTouchGestures, { passive: false });
     document.addEventListener('touchend', preventDoubleTap, { passive: false });
-    document.addEventListener('touchmove', preventPullRefresh, { passive: false });
     
     return () => {
       document.removeEventListener('touchstart', preventTouchGestures);
       document.removeEventListener('touchmove', preventTouchGestures);
       document.removeEventListener('touchend', preventDoubleTap);
-      document.removeEventListener('touchmove', preventPullRefresh);
     };
   }, []);
 
@@ -903,7 +897,7 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
     height: '100%'
   };
 
-  const needsDragHandle = false;
+  const needsDragHandle = component.type === 'image' || component.type === 'button';
 
   const handleComponentPointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
