@@ -23,8 +23,9 @@ const CANVAS_WIDTH = 1000;
 const CANVAS_MIN_HEIGHT = 1600;
 
 function App() {
-  // 检测是否是预览模式
-  const isPreviewMode = window.location.pathname.endsWith('/preview');
+  // 检测是否是预览模式（使用查询参数避免 GitHub Pages 404）
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPreviewMode = urlParams.get('preview') === 'true';
   if (isPreviewMode) {
     return <PreviewPage />;
   }
@@ -685,7 +686,7 @@ ${jsContent}
             <button onClick={() => {
               sessionStorage.setItem('previewComponents', JSON.stringify(components));
               sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
-              window.open('/CodeMyPage/preview', '_blank');
+              window.open('/CodeMyPage/?preview=true', '_blank');
             }} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg"><Eye size={18} /> 预览</button>
             <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg"><Save size={18} /> 保存</button>
             <label className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg cursor-pointer hover:bg-orange-600"><Upload size={18} /> 导入<input type="file" accept=".json" onChange={handleLoad} className="hidden" /></label>
