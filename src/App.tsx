@@ -246,23 +246,25 @@ ${jsContent}
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const frameDoc = frameWindow.document;
-      const canvasElement = frameDoc.querySelector('div[style*="position: relative"]') as HTMLElement;
-
-      if (!canvasElement) {
-        throw new Error('未找到画布元素');
-      }
+      const bodyElement = frameDoc.body;
 
       const { default: html2canvas } = await import('html2canvas');
 
       await frameWindow.document.fonts.ready;
 
-      const canvas = await html2canvas(canvasElement, {
+      const canvas = await html2canvas(bodyElement, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: gridSettings.canvasBackground,
-        width: CANVAS_WIDTH,
-        windowWidth: CANVAS_WIDTH + 40
+        backgroundColor: gridSettings.dotGridBackground,
+        width: CANVAS_WIDTH + 40,
+        windowWidth: CANVAS_WIDTH + 40,
+        onclone: (clonedDoc) => {
+          const clonedBody = clonedDoc.body;
+          if (clonedBody) {
+            clonedBody.style.overflow = 'visible';
+          }
+        }
       });
 
       document.body.removeChild(previewFrame);
