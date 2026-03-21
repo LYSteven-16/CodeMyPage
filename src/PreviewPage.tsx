@@ -24,7 +24,8 @@ export function PreviewPage() {
     }
   }, []);
 
-  const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
+  const storedCanvasHeight = sessionStorage.getItem('previewCanvasHeight');
+  const canvasHeight = storedCanvasHeight ? parseInt(storedCanvasHeight) : Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
   const pdfHeight = sessionStorage.getItem('previewPdfHeight');
   const containerHeight = pdfHeight ? parseInt(pdfHeight) : '100vh';
 

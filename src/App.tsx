@@ -217,14 +217,16 @@ ${jsContent}
         format: [CANVAS_WIDTH, CANVAS_MIN_HEIGHT]
       });
 
-      const canvasHeight = Math.max(
-        CANVAS_MIN_HEIGHT,
-        ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200)
-      );
+      const componentMaxBottom = components.reduce((max, c) => {
+        const bottom = (c.y || 0) + (c.height || 200);
+        return Math.max(max, bottom);
+      }, 0);
+      const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, componentMaxBottom + 200);
 
       sessionStorage.setItem('previewComponents', JSON.stringify(components));
       sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
-      sessionStorage.setItem('previewPdfHeight', String(canvasHeight + 40));
+      sessionStorage.setItem('previewPdfHeight', String(Math.max(canvasHeight + 40, 1600)));
+      sessionStorage.setItem('previewCanvasHeight', String(canvasHeight));
 
       const previewFrame = document.createElement('iframe');
       previewFrame.style.cssText = `
@@ -258,6 +260,14 @@ ${jsContent}
 
       await frameWindow.document.fonts.ready;
 
+      const canvasDiv = frameDoc.querySelector('div[style*="position: relative"]') as HTMLElement;
+
+      let actualHeight = canvasHeight;
+      if (canvasDiv) {
+        const rect = canvasDiv.getBoundingClientRect();
+        actualHeight = Math.max(rect.height, canvasHeight);
+      }
+
       const canvas = await html2canvas(bodyElement, {
         scale: 2,
         useCORS: true,
@@ -265,7 +275,7 @@ ${jsContent}
         backgroundColor: gridSettings.dotGridBackground,
         width: CANVAS_WIDTH + 40,
         windowWidth: CANVAS_WIDTH + 40,
-        height: canvasHeight + 40,
+        height: Math.max(actualHeight + 40, 1640),
         onclone: (clonedDoc) => {
           const clonedBody = clonedDoc.body;
           if (clonedBody) {
