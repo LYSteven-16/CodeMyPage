@@ -260,13 +260,20 @@ ${jsContent}
         </>
       );
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(tempContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: gridSettings.dotGridBackground
+        backgroundColor: gridSettings.dotGridBackground,
+        onclone: (clonedDoc) => {
+          const clonedContainer = clonedDoc.getElementById('pdf-export-container');
+          if (clonedContainer) {
+            clonedContainer.style.visibility = 'visible';
+          }
+        }
       });
 
       root.unmount();
