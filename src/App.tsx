@@ -258,7 +258,7 @@ ${jsContent}
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const captureCanvas = await html2canvas(container, {
-        scale: 2,
+        scale: 4,
         useCORS: true,
         logging: false,
         backgroundColor: gridSettings.dotGridBackground
