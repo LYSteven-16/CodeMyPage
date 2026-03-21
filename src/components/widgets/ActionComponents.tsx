@@ -9,9 +9,15 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
   const [brushSlider, setBrushSlider] = React.useState((component as any).brushSize || 3);
   const [isErasing, setIsErasing] = React.useState(false);
   const [canvasSize, setCanvasSize] = React.useState({ width: 380, height: 200 });
+  const lastPosRef = React.useRef<{ x: number; y: number } | null>(null);
+  const pointerIdRef = React.useRef<number | null>(null);
   
-  const getActualBrushSize = (sliderValue: number) => {
-    return Math.round(Math.min(20, Math.pow(sliderValue / 10, 2) * 5 + 1));
+  const getActualBrushSize = (sliderValue: number, pressure?: number) => {
+    const baseSize = Math.round(Math.min(20, Math.pow(sliderValue / 10, 2) * 5 + 1));
+    if (pressure !== undefined && pressure > 0 && pressure < 1) {
+      return baseSize * (0.3 + pressure * 0.7);
+    }
+    return baseSize;
   };
   
   const getBrushPreviewSize = (brushSize: number) => {
@@ -63,7 +69,7 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
     return dataUrl;
   };
   
-  const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getPointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
@@ -75,33 +81,60 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
     };
   };
   
-  const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    canvas.setPointerCapture(e.pointerId);
+    pointerIdRef.current = e.pointerId;
     setIsDrawing(true);
-    const pos = getMousePos(e);
+    
+    const pos = getPointerPos(e);
+    lastPosRef.current = pos;
+    
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
+    
+    if (e.pointerType === 'pen' && e.pressure > 0) {
+      ctx.lineWidth = getActualBrushSize(brushSlider, e.pressure);
+    }
   };
   
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
+  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || pointerIdRef.current !== e.pointerId) return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const pos = getMousePos(e);
-    ctx.strokeStyle = isErasing ? '#2d5a3d' : brushColor;
-    ctx.lineWidth = isErasing ? 20 : getActualBrushSize(brushSlider);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
+    
+    const pos = getPointerPos(e);
+    
+    if (lastPosRef.current) {
+      ctx.strokeStyle = isErasing ? '#2d5a3d' : brushColor;
+      ctx.lineWidth = isErasing ? 20 : getActualBrushSize(brushSlider, e.pressure);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+    
+    lastPosRef.current = pos;
   };
   
-  const endDraw = () => {
+  const endDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (canvas && pointerIdRef.current === e.pointerId) {
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+    pointerIdRef.current = null;
+    lastPosRef.current = null;
     setIsDrawing(false);
     saveCanvasImage();
   };
@@ -267,26 +300,34 @@ export const DrawingRenderer: React.FC<{ component: WidgetProps; style: React.CS
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             startDraw(e);
           }}
-          onMouseMove={(e) => {
+          onPointerMove={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             draw(e);
           }}
-          onMouseUp={(e) => {
+          onPointerUp={(e) => {
             e.stopPropagation();
-            endDraw();
+            endDraw(e);
           }}
-          onMouseLeave={(e) => {
+          onPointerLeave={(e) => {
             e.stopPropagation();
-            endDraw();
+            endDraw(e);
+          }}
+          onPointerCancel={(e) => {
+            e.stopPropagation();
+            endDraw(e);
           }}
           style={{
             flex: 1,
             backgroundColor: '#2d5a3d',
-            cursor: 'crosshair'
+            cursor: 'crosshair',
+            touchAction: 'none',
+            msTouchAction: 'none'
           }}
         />
       </div>
@@ -302,9 +343,15 @@ export const DrawingPreviewRenderer: React.FC<{ component: WidgetProps; style: R
   const [brushSlider, setBrushSlider] = React.useState(3);
   const [isErasing, setIsErasing] = React.useState(false);
   const [canvasSize, setCanvasSize] = React.useState({ width: 380, height: 200 });
+  const lastPosRef = React.useRef<{ x: number; y: number } | null>(null);
+  const pointerIdRef = React.useRef<number | null>(null);
   
-  const getActualBrushSize = (sliderValue: number) => {
-    return Math.round(Math.min(20, Math.pow(sliderValue / 10, 2) * 5 + 1));
+  const getActualBrushSize = (sliderValue: number, pressure?: number) => {
+    const baseSize = Math.round(Math.min(20, Math.pow(sliderValue / 10, 2) * 5 + 1));
+    if (pressure !== undefined && pressure > 0 && pressure < 1) {
+      return baseSize * (0.3 + pressure * 0.7);
+    }
+    return baseSize;
   };
   
   const getBrushPreviewSize = (brushSize: number) => {
@@ -356,7 +403,7 @@ export const DrawingPreviewRenderer: React.FC<{ component: WidgetProps; style: R
     return dataUrl;
   };
   
-  const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getPointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
@@ -368,33 +415,56 @@ export const DrawingPreviewRenderer: React.FC<{ component: WidgetProps; style: R
     };
   };
   
-  const startDraw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const startDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    canvas.setPointerCapture(e.pointerId);
+    pointerIdRef.current = e.pointerId;
     setIsDrawing(true);
-    const pos = getMousePos(e);
+    
+    const pos = getPointerPos(e);
+    lastPosRef.current = pos;
+    
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
   };
   
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
+  const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || pointerIdRef.current !== e.pointerId) return;
+    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const pos = getMousePos(e);
-    ctx.strokeStyle = isErasing ? '#2d5a3d' : brushColor;
-    ctx.lineWidth = isErasing ? 20 : getActualBrushSize(brushSlider);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
+    
+    const pos = getPointerPos(e);
+    
+    if (lastPosRef.current) {
+      ctx.strokeStyle = isErasing ? '#2d5a3d' : brushColor;
+      ctx.lineWidth = isErasing ? 20 : getActualBrushSize(brushSlider, e.pressure);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+    
+    lastPosRef.current = pos;
   };
   
-  const endDraw = () => {
+  const endDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (canvas && pointerIdRef.current === e.pointerId) {
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+    pointerIdRef.current = null;
+    lastPosRef.current = null;
     setIsDrawing(false);
     saveCanvasImage();
   };
@@ -537,26 +607,34 @@ export const DrawingPreviewRenderer: React.FC<{ component: WidgetProps; style: R
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             startDraw(e);
           }}
-          onMouseMove={(e) => {
+          onPointerMove={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             draw(e);
           }}
-          onMouseUp={(e) => {
+          onPointerUp={(e) => {
             e.stopPropagation();
-            endDraw();
+            endDraw(e);
           }}
-          onMouseLeave={(e) => {
+          onPointerLeave={(e) => {
             e.stopPropagation();
-            endDraw();
+            endDraw(e);
+          }}
+          onPointerCancel={(e) => {
+            e.stopPropagation();
+            endDraw(e);
           }}
           style={{
             flex: 1,
             backgroundColor: '#2d5a3d',
-            cursor: 'crosshair'
+            cursor: 'crosshair',
+            touchAction: 'none',
+            msTouchAction: 'none'
           }}
         />
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, forwardRef } from 'react';
+import React, { useState, useRef, forwardRef, useEffect } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ComponentPanel } from './components/Editor/ComponentPanel';
 import { ComponentEditor } from './components/Editor/ComponentEditor';
@@ -58,6 +58,33 @@ function App() {
     canvasBorderRadius: 0,
     dotGridBackground: '#f3f4f6'
   });
+
+  useEffect(() => {
+    const preventTouchGestures = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    
+    let lastTouchEnd = 0;
+    const preventDoubleTap = (e: TouchEvent) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    };
+    
+    document.addEventListener('touchstart', preventTouchGestures, { passive: false });
+    document.addEventListener('touchmove', preventTouchGestures, { passive: false });
+    document.addEventListener('touchend', preventDoubleTap, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', preventTouchGestures);
+      document.removeEventListener('touchmove', preventTouchGestures);
+      document.removeEventListener('touchend', preventDoubleTap);
+    };
+  }, []);
 
   const gridBackground = {
     backgroundColor: gridSettings.dotGridBackground,
@@ -750,10 +777,10 @@ ${jsContent}
   );
 }
 
-const WorkArea = forwardRef<HTMLDivElement, any>(({ 
-  components, 
-  selectedId, 
-  onSelect, 
+const WorkArea = forwardRef<HTMLDivElement, any>(({
+  components,
+  selectedId,
+  onSelect,
   
   gridBackground,
   canvasBackground,
@@ -773,15 +800,32 @@ const WorkArea = forwardRef<HTMLDivElement, any>(({
 }, ref) => {
   const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
   
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (isResizing) {
+      onResize && onResize(e as any);
+    } else if (isDragging) {
+      onDrag && onDrag(e as any);
+    }
+  };
+  
+  const handlePointerUp = () => {
+    if (isResizing) {
+      onResizeEnd && onResizeEnd();
+    } else if (isDragging) {
+      onDragEnd && onDragEnd();
+    }
+  };
+  
   return (
     <div 
       ref={ref}
       className="flex-1 overflow-auto p-8" 
       style={gridBackground} 
       onClick={() => onSelect(null)}
-      onMouseMove={(e) => { if (isResizing) onResize && onResize(e); else if (isDragging) onDrag && onDrag(e); }}
-      onMouseUp={() => { if (isResizing) { onResizeEnd && onResizeEnd(); } else if (isDragging) { onDragEnd && onDragEnd(); } }}
-      onMouseLeave={() => { if (isResizing) { onResizeEnd && onResizeEnd(); } else if (isDragging) { onDragEnd && onDragEnd(); } }}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       <div 
         ref={canvasRef}
@@ -855,9 +899,9 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
 
   const needsDragHandle = component.type === 'image' || component.type === 'button';
 
-  const handleComponentMouseDown = (e: React.MouseEvent) => {
+  const handleComponentPointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
-    if (onDragStart) onDragStart(e, component.id);
+    if (onDragStart) onDragStart(e as any, component.id);
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
@@ -869,11 +913,11 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
 
   return (
     <div 
-      style={style} 
+      style={{...style, touchAction: 'none'}} 
       className={isSelected ? 'ring-2 ring-blue-500' : ''} 
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
       onDoubleClick={handleDoubleClick}
-      onMouseDown={handleComponentMouseDown}
+      onPointerDown={handleComponentPointerDown}
     >
       <ComponentRenderer component={component} style={innerStyle} />
       {needsDragHandle && (
@@ -884,7 +928,7 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
             border: '2px solid white', zIndex: 10, display: 'flex',
             alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
           }}
-          onMouseDown={(e) => { e.stopPropagation(); onDragStart && onDragStart(e, component.id); }}
+          onPointerDown={(e) => { e.stopPropagation(); onDragStart && onDragStart(e as any, component.id); }}
         >
           <Move size={10} color="white" />
         </div>
@@ -896,7 +940,7 @@ function DraggableWidget({ component, isSelected, onSelect, onDoubleClick, onDra
             backgroundColor: '#3b82f6', borderRadius: '50%', cursor: 'se-resize',
             border: '2px solid white'
           }}
-          onMouseDown={(e) => { e.stopPropagation(); onResizeStart && onResizeStart(e, component.id); }}
+          onPointerDown={(e) => { e.stopPropagation(); onResizeStart && onResizeStart(e as any, component.id); }}
         />
       )}
     </div>
