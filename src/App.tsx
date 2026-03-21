@@ -262,19 +262,20 @@ ${jsContent}
       });
 
       await new Promise<void>((resolve) => {
-        pdf.html(container, {
-          callback: () => {
-            pdf.save('my-page.pdf');
-            resolve();
-          },
-          margin: 0,
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false
-          }
-        });
-      });
+         pdf.html(container, {
+           callback: () => {
+             pdf.save('my-page.pdf');
+             resolve();
+           },
+           margin: 0,
+           html2canvas: {
+             scale: 2,
+             useCORS: true,
+             logging: false,
+             backgroundColor: gridSettings.dotGridBackground
+           }
+         });
+       });
 
       root.unmount();
       document.body.removeChild(container);
