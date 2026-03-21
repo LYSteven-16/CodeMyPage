@@ -209,36 +209,19 @@ ${jsContent}
       setExportLoading(true);
       setExportError(null);
 
-      const { jsPDF } = await import('jspdf');
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [CANVAS_WIDTH, CANVAS_MIN_HEIGHT]
-      });
-
-      const componentMaxBottom = components.reduce((max, c) => {
-        const bottom = (c.y || 0) + (c.height || 200);
-        return Math.max(max, bottom);
-      }, 0);
-      const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, componentMaxBottom + 200);
-
       sessionStorage.setItem('previewComponents', JSON.stringify(components));
       sessionStorage.setItem('previewGridSettings', JSON.stringify(gridSettings));
-      sessionStorage.setItem('previewPdfHeight', String(Math.max(canvasHeight + 40, 1600)));
-      sessionStorage.setItem('previewCanvasHeight', String(canvasHeight));
 
       const previewFrame = document.createElement('iframe');
       previewFrame.style.cssText = `
         position: fixed;
-        left: -9999px;
+        left: 0;
         top: 0;
         width: ${CANVAS_WIDTH + 40}px;
-        height: ${canvasHeight + 100}px;
+        height: 100vh;
         border: none;
+        z-index: 9999;
       `;
-      previewFrame.id = 'pdf-preview-frame';
-
       document.body.appendChild(previewFrame);
 
       const frameWindow = previewFrame.contentWindow;
@@ -251,44 +234,32 @@ ${jsContent}
         previewFrame.src = `?preview=true&pdf=true&t=${Date.now()}`;
       });
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const frameDoc = frameWindow.document;
       const bodyElement = frameDoc.body;
 
       const { default: html2canvas } = await import('html2canvas');
+      const { jsPDF } = await import('jspdf');
 
       await frameWindow.document.fonts.ready;
-
-      const canvasDiv = frameDoc.querySelector('div[style*="position: relative"]') as HTMLElement;
-
-      let actualHeight = canvasHeight;
-      if (canvasDiv) {
-        const rect = canvasDiv.getBoundingClientRect();
-        actualHeight = Math.max(rect.height, canvasHeight);
-      }
 
       const canvas = await html2canvas(bodyElement, {
         scale: 2,
         useCORS: true,
-        logging: false,
-        backgroundColor: gridSettings.dotGridBackground,
-        width: CANVAS_WIDTH + 40,
-        windowWidth: CANVAS_WIDTH + 40,
-        height: Math.max(actualHeight + 40, 1640),
-        onclone: (clonedDoc) => {
-          const clonedBody = clonedDoc.body;
-          if (clonedBody) {
-            clonedBody.style.overflow = 'visible';
-          }
-        }
+        logging: false
       });
 
       document.body.removeChild(previewFrame);
 
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+
       const imgData = canvas.toDataURL('image/png');
-      const pdfHeight = (canvas.height * CANVAS_WIDTH) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, CANVAS_WIDTH, pdfHeight);
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
 
       pdf.save('my-page.pdf');
 

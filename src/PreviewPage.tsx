@@ -24,13 +24,10 @@ export function PreviewPage() {
     }
   }, []);
 
-  const storedCanvasHeight = sessionStorage.getItem('previewCanvasHeight');
-  const canvasHeight = storedCanvasHeight ? parseInt(storedCanvasHeight) : Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
-  const pdfHeight = sessionStorage.getItem('previewPdfHeight');
-  const containerHeight = pdfHeight ? parseInt(pdfHeight) : '100vh';
+  const canvasHeight = Math.max(CANVAS_MIN_HEIGHT, ...components.map((c: WidgetProps) => (c.y || 0) + (c.height || 200) + 200));
 
   return (
-    <div style={{ minHeight: typeof containerHeight === 'number' ? `${containerHeight}px` : containerHeight, backgroundColor: gridSettings.dotGridBackground, padding: 20 }}>
+    <div style={{ minHeight: '100vh', backgroundColor: gridSettings.dotGridBackground, padding: 20 }}>
       <div style={{ position: 'relative', width: CANVAS_WIDTH, minHeight: canvasHeight, backgroundColor: gridSettings.canvasBackground, borderRadius: gridSettings.canvasBorderRadius, margin: '0 auto' }}>
         {components.map(comp => {
           const style: React.CSSProperties = {
