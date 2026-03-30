@@ -112,10 +112,27 @@ npm run build
 
 ```
 src/
-├── main.ts           # Main application entry
+├── main.ts           # Application entry point
+├── app.ts            # Main application logic and UI rendering
+├── types.ts          # TypeScript type definitions
+├── constants.ts      # Application constants and colors
+├── state.ts          # Global state management
+├── ui.ts             # UI rendering utilities
+├── workspace.ts      # Workspace rendering logic
+├── events.ts         # Event handling and interactions
 ├── test-component.ts # Component definitions
-└── preview.ts        # Preview functionality
+├── preview.ts        # Preview functionality
+└── components/
+    └── TextComponent.json  # Text component configuration
 ```
+
+### Architecture Highlights
+
+- **Modular Design** - Code split into focused modules (< 300 lines each)
+- **State Management** - Centralized state with setter functions
+- **Event System** - Separated event handling logic
+- **Type Safety** - Full TypeScript support with interfaces
+- **Component Library** - JSON-based component configurations
 
 ---
 
