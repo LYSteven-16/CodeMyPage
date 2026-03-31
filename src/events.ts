@@ -1,5 +1,6 @@
 // ==================== 事件绑定 ====================
 import { colors } from './constants'
+import html2canvas from 'html2canvas'
 import { 
   gridSettings, 
   workspaces, 
@@ -62,7 +63,6 @@ export function bindEvents() {
   document.getElementById('btn-snap')?.addEventListener('click', () => { setGridSettings({...gridSettings, snapToGrid: !gridSettings.snapToGrid}); renderUI() })
   document.getElementById('btn-load')?.addEventListener('click', () => document.getElementById('file-input')?.click())
   document.getElementById('btn-preview')?.addEventListener('click', () => {
-    // 保存预览数据到 localStorage
     const previewData = {
       components: components.map(comp => ({
         id: comp.id,
@@ -78,13 +78,196 @@ export function bindEvents() {
     localStorage.setItem('codemypage-preview', JSON.stringify(previewData))
     window.open('/CodeMyPage/preview.html', '_blank')
   })
-  document.getElementById('btn-export')?.addEventListener('click', () => {
+
+  let exportMenuVisible = false
+  let exportMenu: HTMLElement | null = null
+  
+  function createExportMenu() {
+    if (exportMenu) return exportMenu
+    exportMenu = document.createElement('div')
+    exportMenu.id = 'export-menu'
+    exportMenu.style.cssText = 'display:none;position:fixed;background:#fff;border:1px solid #e5e5e5;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);padding:6px;min-width:180px;z-index:99999;'
+    exportMenu.innerHTML = `
+      <div data-action="project" style="padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;color:#333;">
+        📁 导出工程文件
+      </div>
+      <div data-action="offline" style="padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;color:#333;">
+        🌐 导出离线HTML
+      </div>
+      <div data-action="pdf" style="padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;color:#333;">
+        📄 导出PDF
+      </div>
+    `
+    exportMenu.querySelectorAll('div').forEach(item => {
+      item.addEventListener('mouseenter', () => (item.style.background = '#f0f0f5'))
+      item.addEventListener('mouseleave', () => (item.style.background = 'transparent'))
+      item.addEventListener('click', () => {
+        const action = item.getAttribute('data-action')
+        if (action === 'project') (window as any).exportProject()
+        else if (action === 'offline') (window as any).exportOfflineHTML()
+        else if (action === 'pdf') (window as any).exportPDF()
+        hideExportMenu()
+      })
+    })
+    document.body.appendChild(exportMenu)
+    return exportMenu
+  }
+  
+  function hideExportMenu() {
+    exportMenuVisible = false
+    if (exportMenu) exportMenu.style.display = 'none'
+  }
+  
+  function showExportMenu() {
+    exportMenuVisible = true
+    const btn = document.getElementById('btn-export')
+    if (!btn || !exportMenu) return
+    const rect = btn.getBoundingClientRect()
+    exportMenu.style.display = 'block'
+    exportMenu.style.top = `${rect.bottom + 4}px`
+    exportMenu.style.left = `${rect.right - 180}px`
+  }
+  
+  document.getElementById('btn-export')?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    createExportMenu()
+    if (exportMenuVisible) {
+      hideExportMenu()
+    } else {
+      showExportMenu()
+    }
+  })
+  
+  document.addEventListener('click', (e) => {
+    if (exportMenuVisible && exportMenu && !exportMenu.contains(e.target as Node) && !(e.target as Element).closest('#btn-export')) {
+      hideExportMenu()
+    }
+  })
+
+  ;(window as any).exportProject = () => {
     const blob = new Blob([JSON.stringify({ gridSettings, workspaces, components }, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = 'project.json'
     a.click()
-  })
+  }
+
+  ;(window as any).exportOfflineHTML = async () => {
+    const container = document.createElement('div')
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;'
+    document.body.appendChild(container)
+
+    const workspace = workspaces.find(ws => ws.id === currentWorkspaceId)
+    if (!workspace) {
+      document.body.removeChild(container)
+      return
+    }
+
+    const workspaceDiv = document.createElement('div')
+    workspaceDiv.style.cssText = `
+      position: relative;
+      width: ${workspace.width}px;
+      min-height: ${workspace.height}px;
+      background: ${workspace.canvasBackground};
+      border-radius: ${workspace.canvasBorderRadius}px;
+      box-shadow: ${workspace.showShadow ? `${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowSpread}px ${workspace.shadowColor}` : 'none'};
+      margin: 40px auto;
+    `
+
+    for (const comp of components) {
+      const compContainer = document.createElement('div')
+      compContainer.style.cssText = `position:absolute;left:${comp.x}px;top:${comp.y}px;width:${comp.width}px;height:${comp.height}px;`
+      renderComponentSnapshot(comp.type, 0, 0, compContainer, comp.width, comp.height, comp.props)
+      workspaceDiv.appendChild(compContainer)
+    }
+
+    container.appendChild(workspaceDiv)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const canvas = await html2canvas(workspaceDiv, { scale: 2 })
+    const imgData = canvas.toDataURL('image/png')
+
+    document.body.removeChild(container)
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeMyPage Export</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f5f5f7; min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <img src="${imgData}" alt="CodeMyPage Export">
+</body>
+</html>`
+
+    const blob = new Blob([htmlContent], { type: 'text/html' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'codemypage-export.html'
+    a.click()
+  }
+
+  ;(window as any).exportPDF = async () => {
+    const container = document.createElement('div')
+    container.style.cssText = 'position:fixed;left:-9999px;top:0;'
+    document.body.appendChild(container)
+
+    const workspace = workspaces.find(ws => ws.id === currentWorkspaceId)
+    if (!workspace) {
+      document.body.removeChild(container)
+      return
+    }
+
+    const workspaceDiv = document.createElement('div')
+    workspaceDiv.style.cssText = `
+      position: relative;
+      width: ${workspace.width}px;
+      min-height: ${workspace.height}px;
+      background: ${workspace.canvasBackground};
+      border-radius: ${workspace.canvasBorderRadius}px;
+      box-shadow: ${workspace.showShadow ? `${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowSpread}px ${workspace.shadowColor}` : 'none'};
+      margin: 40px auto;
+    `
+
+    for (const comp of components) {
+      const compContainer = document.createElement('div')
+      compContainer.style.cssText = `position:absolute;left:${comp.x}px;top:${comp.y}px;width:${comp.width}px;height:${comp.height}px;`
+      renderComponentSnapshot(comp.type, 0, 0, compContainer, comp.width, comp.height, comp.props)
+      workspaceDiv.appendChild(compContainer)
+    }
+
+    container.appendChild(workspaceDiv)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const canvas = await html2canvas(workspaceDiv, { scale: 2 })
+    const imgData = canvas.toDataURL('image/png')
+
+    document.body.removeChild(container)
+
+    const printWindow = window.open('', '_blank')!
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CodeMyPage Export</title>
+  <style>
+    @page { margin: 0; }
+    body { margin: 0; }
+    img { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <img src="${imgData}" onload="window.print();window.close();">
+</body>
+</html>`)
+    printWindow.document.close()
+  }
   document.getElementById('btn-reset')?.addEventListener('click', () => { if (confirm('确认重置？')) { setComponents([]); renderUI() } })
   document.getElementById('btn-save')?.addEventListener('click', () => {
     const data = JSON.stringify({ gridSettings, workspaces, components })
@@ -449,7 +632,7 @@ function bindPropertyEditorEvents() {
   
   document.getElementById('prop-shadow')?.addEventListener('change', (e) => {
     selected.props.shadowEnabled = (e.target as HTMLInputElement).checked
-    renderUI()
+    renderWorkspace()
   })
   
   document.getElementById('prop-shadow-blur')?.addEventListener('input', (e) => {

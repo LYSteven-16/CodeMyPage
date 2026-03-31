@@ -1,17 +1,58 @@
 {
-  "id": "",
-  "position": { "x": 0, "y": 0 },
-  "atoms": [
-    {
-      "id": "",
-      "capability": "text",
-      "text": "Hello AtomEngine!",
-      "position": { "x": 20, "y": 20 },
-      "size": 18,
-      "color": [51, 51, 51],
-      "fontWeight": "bold"
-    }
-  ],
-  "width": 200,
-  "height": 60
+  "type": "text",
+  "name": "文本组件",
+  "icon": "📝",
+  "defaultWidth": 200,
+  "defaultHeight": 60,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": [
+      {
+        "id": "",
+        "capability": "shadow",
+        "x": 0,
+        "y": 2,
+        "shadowBlur": 8,
+        "shadowWidth": 0,
+        "color": [0, 0, 0],
+        "opacity": 0.06,
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "width": 200,
+        "height": 60,
+        "radius": 8
+      },
+      {
+        "id": "",
+        "capability": "background",
+        "color": [255, 255, 255],
+        "position": { "x": 0, "y": 0, "z": 0.1 },
+        "width": 200,
+        "height": 60,
+        "radius": 8
+      },
+      {
+        "id": "",
+        "capability": "border",
+        "borderWidth": 1,
+        "color": [229, 231, 235],
+        "position": { "x": 0, "y": 0, "z": 0.5 },
+        "width": 200,
+        "height": 60,
+        "radius": 8
+      },
+      {
+        "id": "",
+        "capability": "text",
+        "text": "Hello AtomEngine!",
+        "position": { "x": 20, "y": 20, "z": 1 },
+        "size": 18,
+        "color": [51, 51, 51],
+        "fontWeight": "bold"
+      }
+    ],
+    "width": 200,
+    "height": 60,
+    "radius": 8
+  }
 }

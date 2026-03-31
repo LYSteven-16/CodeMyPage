@@ -1,5 +1,6 @@
-// ==================== 入口文件 ====================
 import { renderUI } from './app'
+import { restoreState } from './persistence'
 
-// 启动应用
+restoreState()
+
 renderUI()

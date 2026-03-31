@@ -1,0 +1,90 @@
+# CodeMyPage - Cline Rules
+
+## 项目概述
+- 纯 TypeScript 项目（无框架依赖），原生 DOM 操作
+- 可视化拖拽式网页编辑器，部署到 GitHub Pages（纯静态）
+- 技术栈：TypeScript + Vite + UnoCSS
+- 引擎：`@component-chemistry/atom-engine`（BeakerManager → 分子包渲染快照）
+
+## 工作流程（必须遵守）
+
+### 第一步：分析
+- 读取相关源码，理解当前实现
+- 确认根因（不要猜，要从代码中找证据）
+
+### 第二步：规划（先输出计划，等我确认再动手）
+输出格式：
+
+```
+## 目标
+（一句话说清楚要做什么）
+
+## 根因
+（从代码中找到的根本原因，附文件路径和行号）
+
+## 实施步骤
+1. 改文件 A：具体改什么，为什么
+2. 改文件 B：具体改什么，为什么
+...
+
+## 验收标准
+（可验证的标准，不是"应该可以"）
+```
+
+### 第三步：执行
+- 按确认后的计划逐步实施
+- 每改一个文件，说明改了什么
+
+### 第四步：验证
+- 按验收标准逐条验证
+- 运行 `npm run build` 确保无 TS/lint 错误
+- 告诉我结果：✅ 达标 / ❌ 哪条没达标
+
+## 文件结构
+```
+src/
+├── main.ts                 # 主入口
+├── app.ts                  # UI 布局、工具栏、面板
+├── test-component.ts       # 组件定义和渲染
+├── preview.ts              # 预览功能
+├── component-registry.ts   # 组件注册中心（自动扫描 components/）
+├── state.ts                # 状态管理
+├── events.ts               # 事件处理（拖拽、选择、属性编辑）
+├── ui.ts                   # UI 工具函数
+├── workspace.ts            # 工作区管理
+├── types.ts                # 类型定义
+└── components/             # 组件 JSON 包（AtomEngine 分子格式）
+```
+
+## 编辑原则
+- **只修改需要改变的部分**，不要重写整个文件
+- 用 edit 工具精确替换（提供 old_string 和 new_string）
+- 修改前先读取相关文件（至少 2-3 个），理解上下文再动手
+- 遵循项目现有代码风格，不要引入新架构
+
+## 代码风格
+- TypeScript 严格模式，所有函数要有类型注解
+- 变量/函数：camelCase，类/接口：PascalCase，文件名：kebab-case
+- 字符串用单引号，语句末尾加分号，缩进 2 空格
+- 用 ES Module（import/export），不用 require
+
+## 组件系统
+- 组件定义在 `src/components/*.json`，格式：type、name、icon、defaultWidth、defaultHeight、molecule
+- molecule 是 AtomEngine 格式，包含 atoms 数组
+- 新增组件只需添加 JSON 文件，component-registry.ts 自动扫描注册
+- **不要为每个组件单独创建 .ts 文件**
+
+## 技术约束
+- ❌ 不能使用 Node.js API（fs、path 等）
+- ❌ 不能有后端请求（GitHub Pages 只支持静态资源）
+- ✅ 数据持久化用 localStorage
+- ✅ 文件操作用浏览器 API（FileReader、Blob）
+
+## 状态管理
+- 状态集中放在 `state.ts`，通过 `getState()` / `setState()` 访问
+- 状态变更通过 `events.ts` 事件系统通知其他模块
+
+## 快捷键
+- ⌘S / Ctrl+S：保存
+- ⌘B / Ctrl+B：切换侧边栏
+- Delete / Backspace：删除选中组件

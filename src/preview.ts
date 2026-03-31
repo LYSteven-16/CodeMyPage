@@ -1,12 +1,16 @@
 import 'virtual:uno.css'
 import { BeakerManager } from '@component-chemistry/atom-engine'
+import { registerComponents, getComponentDef } from './component-registry'
 
 // ==================== 类型定义 ====================
 interface EditorComponent {
   id: string
   type: string
-  content: Record<string, any>
-  style: Record<string, any>
+  x: number
+  y: number
+  width: number
+  height: number
+  props: Record<string, any>
 }
 
 interface GridSettings {
@@ -30,68 +34,118 @@ function hexToRgb(hex: string): [number, number, number] {
 
 // ==================== 分子配置（完整功能，包括互动） ====================
 function componentToMolecule(comp: EditorComponent): any {
-  const s = comp.style
-  const c = comp.content
-  const w = s.width || 200
-  const h = s.height || 100
-
-  const atoms: any[] = []
-
-  // 背景
-  if (s.backgroundColor) {
-    atoms.push({ capability: 'background', color: hexToRgb(s.backgroundColor), position: { x: 0, y: 0, z: 0 }, width: w, height: h, radius: s.borderRadius || 0 })
+  const def = getComponentDef(comp.type)
+  if (!def) {
+    console.warn(`[Preview] 未找到组件定义: ${comp.type}`)
+    return null
   }
 
-  // 边框
-  atoms.push({
-    capability: 'border',
-    borderWidth: 1,
-    color: [229, 231, 235],
-    position: { x: 0, y: 0, z: 0 },
-    width: w, height: h,
-    radius: s.borderRadius || 0,
-  })
-
-  // 阴影
-  if (s.hasShadow !== false) {
-    atoms.push({ capability: 'shadow', x: 0, y: 2, shadowBlur: 8, shadowWidth: 0, color: [0, 0, 0], opacity: 0.06, position: { x: 0, y: 0, z: -1 }, width: w, height: h, radius: s.borderRadius || 0 })
+  // 克隆分子数据，避免污染原始定义
+  const molecule = JSON.parse(JSON.stringify(def.molecule))
+  
+  // 设置位置和尺寸
+  molecule.id = comp.id
+  molecule.position = { x: comp.x, y: comp.y, z: 1 }
+  molecule.width = comp.width || def.defaultWidth
+  molecule.height = comp.height || def.defaultHeight
+  
+  // 应用用户修改的属性
+  const props = comp.props || {}
+  
+  // 处理每个原子
+  if (molecule.atoms && Array.isArray(molecule.atoms)) {
+    molecule.atoms.forEach((atom: any) => {
+      // 文本原子
+      if (atom.capability === 'text') {
+        if (props.text !== undefined) {
+          atom.text = props.text
+        }
+        if (props.fontSize !== undefined) {
+          atom.size = props.fontSize
+        }
+        if (props.textColor !== undefined) {
+          atom.color = hexToRgb(props.textColor)
+        }
+        if (props.textX !== undefined || props.textY !== undefined) {
+          atom.position = atom.position || { x: 20, y: 20 }
+          atom.position.x = props.textX ?? atom.position.x
+          atom.position.y = props.textY ?? atom.position.y
+        }
+        // 设置字体家族，确保与编辑器一致
+        atom.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+      }
+      
+      // 背景原子
+      if (atom.capability === 'background') {
+        if (props.backgroundColor !== undefined) {
+          atom.color = hexToRgb(props.backgroundColor)
+        }
+        // 更新尺寸
+        atom.width = molecule.width
+        atom.height = molecule.height
+      }
+      
+      // 边框原子
+      if (atom.capability === 'border') {
+        if (props.borderColor !== undefined) {
+          atom.color = hexToRgb(props.borderColor)
+        }
+        if (props.borderWidth !== undefined) {
+          atom.borderWidth = props.borderWidth
+        }
+        // 更新尺寸
+        atom.width = molecule.width
+        atom.height = molecule.height
+      }
+      
+      // 阴影原子
+      if (atom.capability === 'shadow') {
+        if (props.shadowEnabled !== undefined) {
+          atom.visible = props.shadowEnabled
+        }
+        if (props.shadowBlur !== undefined) {
+          atom.shadowBlur = props.shadowBlur
+        }
+        if (props.shadowSpread !== undefined) {
+          atom.shadowWidth = props.shadowSpread
+        }
+        if (props.shadowColor !== undefined) {
+          const rgb = hexToRgb(props.shadowColor)
+          atom.color = rgb
+        }
+        // 更新尺寸
+        atom.width = molecule.width
+        atom.height = molecule.height
+      }
+      
+      // 圆角
+      if (atom.radius !== undefined && props.borderRadius !== undefined) {
+        atom.radius = props.borderRadius
+      }
+    })
   }
-
-  // 文本
-  const text = c.text || c.title || c.quoteText || c.alertContent
-  if (text) {
-    atoms.push({ capability: 'text', text, position: { x: 0, y: 0 }, size: s.fontSize || 14, color: hexToRgb(s.color || '#1d1d1f') })
+  
+  // 处理阴影显示/隐藏
+  if (props.shadowEnabled !== undefined && molecule.atoms) {
+    const shadowAtom = molecule.atoms.find((a: any) => a.capability === 'shadow')
+    if (shadowAtom) {
+      shadowAtom.visible = props.shadowEnabled
+    }
   }
-
-  // 代码
-  if (c.code) {
-    atoms.push({ capability: 'code', code: c.code, language: c.language || 'javascript', position: { x: 0, y: 0 }, width: w, height: h, backgroundColor: [30, 30, 30], autoFormat: true })
+  
+  // 处理圆角
+  if (props.borderRadius !== undefined) {
+    molecule.radius = props.borderRadius
+    if (molecule.atoms) {
+      molecule.atoms.forEach((atom: any) => {
+        if (atom.radius !== undefined) {
+          atom.radius = props.borderRadius
+        }
+      })
+    }
   }
-
-  // 进度条
-  if (comp.type === 'progress') {
-    atoms.push(
-      { capability: 'background', color: [229, 231, 235], position: { x: 0, y: h/2-4, z: 0 }, width: w, height: 8, radius: 4 },
-      { capability: 'background', color: [0, 122, 255], position: { x: 0, y: h/2-4, z: 1 }, width: w*(c.progress||50)/100, height: 8, radius: 4 }
-    )
-  }
-
-  // 分隔线
-  if (comp.type === 'divider') {
-    atoms.push({ capability: 'background', color: [229, 231, 235], position: { x: 0, y: h/2-1, z: 0 }, width: w, height: 2, radius: 1 })
-  }
-
-  // 注意：预览页面使用引擎的完整功能
-  // 如果用户配置了互动能力（如点击、拖拽等），会在这里生效
-
-  return {
-    id: comp.id,
-    position: { x: s.x || 0, y: s.y || 0, z: 1 },
-    width: w,
-    height: h,
-    radius: s.borderRadius || 0,
-    atoms,
-  }
+  
+  return molecule
 }
 
 // ==================== 初始化预览 ====================
@@ -140,7 +194,7 @@ function initPreview() {
     // 计算画布高度
     let canvasHeight = 1200
     components.forEach(comp => {
-      const bottom = (comp.style?.y || 0) + (comp.style?.height || 100)
+      const bottom = (comp.y || 0) + (comp.height || 100)
       if (bottom + 200 > canvasHeight) canvasHeight = bottom + 200
     })
 

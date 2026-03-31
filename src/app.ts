@@ -41,7 +41,7 @@ export function renderUI() {
 
   app.innerHTML = `
     <!-- 顶部工具栏 -->
-    <div class="toolbar-shell" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;${floatBg}">
+    <div class="toolbar-shell" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;${floatBg}">
       <div class="toolbar-brand">CodeMyPage</div>
       <div class="toolbar-group">
         <button id="btn-grid" class="btn ${showGridSettings ? 'active' : ''}">网格</button>
