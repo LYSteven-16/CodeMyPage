@@ -7,10 +7,9 @@ import {
   components,
   setCurrentWorkspaceId
 } from './state'
-import type { Workspace } from './types'
-import type { ComponentInstance } from './test-component'
-import { renderTestComponent } from './test-component'
+import type { Workspace, ComponentInstance } from './types'
 import { bindComponentEvents } from './events'
+import { renderComponentSnapshot } from './component-registry'
 
 export function renderWorkspace() {
   document.documentElement.style.overflow = 'auto'
@@ -67,12 +66,34 @@ export function renderWorkspace() {
     `
     
     // 渲染组件
-    const componentsHtml = components
+    components
       .filter(c => c.id.startsWith(workspace.id + '-'))
-      .map(c => renderTestComponent(c))
-      .join('')
-    
-    workspaceEl.innerHTML = componentsHtml
+      .forEach(c => {
+        // 使用组件注册中心生成快照
+        const snapshotElement = renderComponentSnapshot(
+          c.type,
+          c.x,
+          c.y,
+          workspaceEl,
+          c.width,
+          c.height,
+          c.props
+        )
+        
+        if (snapshotElement) {
+          // 设置组件数据属性
+          snapshotElement.dataset.id = c.id
+          snapshotElement.dataset.type = c.type
+          snapshotElement.className = 'canvas-component'
+          
+          // 应用组件样式
+          snapshotElement.style.position = 'absolute'
+          snapshotElement.style.left = `${c.x}px`
+          snapshotElement.style.top = `${c.y}px`
+          snapshotElement.style.width = `${c.width}px`
+          snapshotElement.style.height = `${c.height}px`
+        }
+      })
     
     const titleEl = document.createElement('div')
     titleEl.className = 'workspace-title'

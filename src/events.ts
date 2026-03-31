@@ -34,11 +34,25 @@ import {
   setGlobalEventsBound,
   setPanelPositions
 } from './state'
-import type { GridSettings, Workspace, PanelPosition } from './types'
-import type { ComponentInstance } from './test-component'
-import { testComponentDef, renderTestComponent } from './test-component'
+import type { GridSettings, Workspace, PanelPosition, ComponentInstance } from './types'
 import { renderUI } from './app'
 import { renderWorkspace } from './workspace'
+import { 
+  getComponentDef, 
+  renderComponentSnapshot, 
+  getComponentMenuItems 
+} from './component-registry'
+
+let workspaceRenderQueued = false
+
+function scheduleWorkspaceRender() {
+  if (workspaceRenderQueued) return
+  workspaceRenderQueued = true
+  requestAnimationFrame(() => {
+    workspaceRenderQueued = false
+    renderWorkspace()
+  })
+}
 
 export function bindEvents() {
   document.getElementById('btn-grid')?.addEventListener('click', (e) => { e.stopPropagation(); setShowGridSettings(!showGridSettings); setShowBgSettings(false); setShowCanvasSettings(false); setShowComponentPanel(false); setShowPropertyEditor(false); setShowAddWorkspaceDialog(false); renderUI() })
@@ -48,6 +62,20 @@ export function bindEvents() {
   document.getElementById('btn-snap')?.addEventListener('click', () => { setGridSettings({...gridSettings, snapToGrid: !gridSettings.snapToGrid}); renderUI() })
   document.getElementById('btn-load')?.addEventListener('click', () => document.getElementById('file-input')?.click())
   document.getElementById('btn-preview')?.addEventListener('click', () => {
+    // 保存预览数据到 localStorage
+    const previewData = {
+      components: components.map(comp => ({
+        id: comp.id,
+        type: comp.type,
+        x: comp.x,
+        y: comp.y,
+        width: comp.width,
+        height: comp.height,
+        props: comp.props || {}
+      })),
+      gridSettings
+    }
+    localStorage.setItem('codemypage-preview', JSON.stringify(previewData))
     window.open('/CodeMyPage/preview.html', '_blank')
   })
   document.getElementById('btn-export')?.addEventListener('click', () => {
@@ -64,7 +92,13 @@ export function bindEvents() {
   })
 
   document.getElementById('snap-toggle')?.addEventListener('change', (e) => { setGridSettings({...gridSettings, snapToGrid: (e.target as HTMLInputElement).checked}); renderUI() })
-  document.getElementById('spacing')?.addEventListener('input', (e) => { setGridSettings({...gridSettings, dotSpacing: +(e.target as HTMLInputElement).value}); renderUI() })
+  document.getElementById('spacing')?.addEventListener('input', (e) => {
+    const value = +(e.target as HTMLInputElement).value
+    setGridSettings({ ...gridSettings, dotSpacing: value })
+    const valueLabel = (e.target as HTMLElement).parentElement?.querySelector('span:last-child') as HTMLElement | null
+    if (valueLabel) valueLabel.textContent = `${value}px`
+    scheduleWorkspaceRender()
+  })
   document.getElementById('bg-color')?.addEventListener('input', (e) => { setGridSettings({...gridSettings, dotGridBackground: (e.target as HTMLInputElement).value}); renderUI() })
   document.getElementById('canvas-color')?.addEventListener('input', (e) => { 
     const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
@@ -98,14 +132,14 @@ export function bindEvents() {
     const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
     if (currentWorkspace) {
       currentWorkspace.shadowBlur = +(e.target as HTMLInputElement).value
-      renderUI()
+      scheduleWorkspaceRender()
     }
   })
   document.getElementById('shadow-spread')?.addEventListener('input', (e) => {
     const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
     if (currentWorkspace) {
       currentWorkspace.shadowSpread = +(e.target as HTMLInputElement).value
-      renderUI()
+      scheduleWorkspaceRender()
     }
   })
   document.getElementById('shadow-color')?.addEventListener('input', (e) => {
@@ -281,28 +315,32 @@ export function bindEvents() {
       if (type) {
         event.dataTransfer?.setData('component-type', type)
         
-        // 创建拖拽预览
-        dragPreview = document.createElement('div')
-        dragPreview.style.cssText = `
-          position: fixed;
-          width: ${testComponentDef.defaultWidth}px;
-          height: ${testComponentDef.defaultHeight}px;
-          background: ${testComponentDef.defaultProps.backgroundColor};
-          border: ${testComponentDef.defaultProps.borderWidth}px solid ${testComponentDef.defaultProps.borderColor};
-          border-radius: ${testComponentDef.defaultProps.borderRadius}px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: ${testComponentDef.defaultProps.fontSize}px;
-          color: ${testComponentDef.defaultProps.textColor};
-          pointer-events: none;
-          z-index: 1000;
-          opacity: 0.8;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-          transform: translate(-50%, -50%);
-        `
-        dragPreview.textContent = testComponentDef.defaultProps.text || '测试组件'
-        document.body.appendChild(dragPreview)
+        // 从组件注册中心获取组件定义
+        const componentDef = getComponentDef(type)
+        if (componentDef) {
+          // 创建拖拽预览
+          dragPreview = document.createElement('div')
+          dragPreview.style.cssText = `
+            position: fixed;
+            width: ${componentDef.defaultWidth}px;
+            height: ${componentDef.defaultHeight}px;
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #1d1d1f;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translate(-50%, -50%);
+          `
+          dragPreview.textContent = componentDef.name
+          document.body.appendChild(dragPreview)
+        }
         
         // 设置拖拽图像为透明
         const img = new Image()
@@ -332,9 +370,6 @@ export function bindEvents() {
     bindPropertyEditorEvents()
   }
 
-  // 组件事件
-  bindComponentEvents()
-  
   // 全局拖拽事件（只绑定一次）
   if (!globalEventsBound) {
     document.addEventListener('mousemove', handleDrag)
@@ -357,6 +392,16 @@ function bindPropertyEditorEvents() {
   const selected = components.find(c => c.id === selectedComponentId)
   if (!selected) return
   
+  document.getElementById('prop-width')?.addEventListener('input', (e) => {
+    selected.width = Math.max(20, +(e.target as HTMLInputElement).value)
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-height')?.addEventListener('input', (e) => {
+    selected.height = Math.max(20, +(e.target as HTMLInputElement).value)
+    renderWorkspace()
+  })
+  
   document.getElementById('prop-text')?.addEventListener('input', (e) => {
     selected.props.text = (e.target as HTMLInputElement).value
     renderWorkspace()
@@ -374,6 +419,16 @@ function bindPropertyEditorEvents() {
   
   document.getElementById('prop-font-size')?.addEventListener('input', (e) => {
     selected.props.fontSize = +(e.target as HTMLInputElement).value
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-text-x')?.addEventListener('input', (e) => {
+    selected.props.textX = +(e.target as HTMLInputElement).value
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-text-y')?.addEventListener('input', (e) => {
+    selected.props.textY = +(e.target as HTMLInputElement).value
     renderWorkspace()
   })
   
@@ -399,12 +454,12 @@ function bindPropertyEditorEvents() {
   
   document.getElementById('prop-shadow-blur')?.addEventListener('input', (e) => {
     selected.props.shadowBlur = +(e.target as HTMLInputElement).value
-    renderWorkspace()
+    scheduleWorkspaceRender()
   })
   
   document.getElementById('prop-shadow-spread')?.addEventListener('input', (e) => {
     selected.props.shadowSpread = +(e.target as HTMLInputElement).value
-    renderWorkspace()
+    scheduleWorkspaceRender()
   })
   
   document.getElementById('prop-shadow-color')?.addEventListener('input', (e) => {
@@ -443,9 +498,16 @@ export function bindComponentEvents() {
       const workspaceData = workspaces.find(w => w.id === workspace.id)
       if (!workspaceData) return
       
+      // 从组件注册中心获取组件定义
+      const componentDef = getComponentDef(type)
+      if (!componentDef) {
+        console.error(`[Events] 未找到组件定义: ${type}`)
+        return
+      }
+      
       const rect = newWorkspaceEl.getBoundingClientRect()
-      let x = event.clientX - rect.left - testComponentDef.defaultWidth / 2
-      let y = event.clientY - rect.top - testComponentDef.defaultHeight / 2
+      let x = event.clientX - rect.left - componentDef.defaultWidth / 2
+      let y = event.clientY - rect.top - componentDef.defaultHeight / 2
       
       // 网格吸附
       if (gridSettings.snapToGrid) {
@@ -453,27 +515,42 @@ export function bindComponentEvents() {
         y = Math.round(y / gridSettings.dotSpacing) * gridSettings.dotSpacing
       }
       
-      const newComponent: ComponentInstance = {
-        id: `${workspace.id}-component-${Date.now()}`,
-        type: type,
-        x: Math.max(0, Math.min(x, workspaceData.width - testComponentDef.defaultWidth)),
-        y: Math.max(0, Math.min(y, workspaceData.height - testComponentDef.defaultHeight)),
-        width: testComponentDef.defaultWidth,
-        height: testComponentDef.defaultHeight,
-        selected: false,
-        props: { ...testComponentDef.defaultProps }
-      }
+      // 使用组件注册中心生成快照
+      const snapshotElement = renderComponentSnapshot(
+        type,
+        Math.max(0, Math.min(x, workspaceData.width - componentDef.defaultWidth)),
+        Math.max(0, Math.min(y, workspaceData.height - componentDef.defaultHeight)),
+        newWorkspaceEl,
+        componentDef.defaultWidth,
+        componentDef.defaultHeight
+      )
       
-      setComponents([...components, newComponent])
-      renderUI()
-      
-      // 添加放置动画效果
-      requestAnimationFrame(() => {
-        const placedElement = document.querySelector(`[data-id="${newComponent.id}"]`) as HTMLElement
-        if (placedElement) {
-          placedElement.style.animation = 'componentDrop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      if (snapshotElement) {
+        // 创建组件实例记录
+        const newComponent: ComponentInstance = {
+          id: `${workspace.id}-component-${Date.now()}`,
+          type: type,
+          x: Math.max(0, Math.min(x, workspaceData.width - componentDef.defaultWidth)),
+          y: Math.max(0, Math.min(y, workspaceData.height - componentDef.defaultHeight)),
+          width: componentDef.defaultWidth,
+          height: componentDef.defaultHeight,
+          selected: false,
+          props: {
+            text: componentDef.molecule?.atoms?.find((atom: any) => atom?.capability === 'text')?.text || ''
+          }
         }
-      })
+        
+        setComponents([...components, newComponent])
+        renderUI()
+        
+        // 添加放置动画效果
+        requestAnimationFrame(() => {
+          const placedElement = document.querySelector(`[data-id="${newComponent.id}"]`) as HTMLElement
+          if (placedElement) {
+            placedElement.style.animation = 'componentDrop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }
+        })
+      }
     })
     
     newWorkspaceEl.querySelectorAll('.canvas-component').forEach(el => {
