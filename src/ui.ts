@@ -31,7 +31,7 @@ export function renderDropdown(title: string, content: string, id?: string): str
     ? `left:${savedPosition.x}px;top:${savedPosition.y}px;transform:none;`
     : `top:68px;left:50%;transform:translateX(-50%);`
   const panelWidth = 'width:min(280px,calc(100vw - 20px));'
-  return `<div id="${panelId}" class="draggable-panel" style="position:fixed;${positionStyle}z-index:110;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.12);padding:10px;${panelWidth}max-height:calc(100vh - 100px);display:flex;flex-direction:column;overflow:hidden;">
+  return `<div id="${panelId}" class="draggable-panel" style="position:fixed;${positionStyle}z-index:99999;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.12);padding:10px;${panelWidth}max-height:calc(100vh - 100px);display:flex;flex-direction:column;overflow:hidden;">
     <div class="panel-header" style="font-size:14px;font-weight:600;color:${colors.text};margin-bottom:10px;padding:2px 2px 0;cursor:grab;user-select:none;">${title}</div>
     <div class="panel-content" style="overflow:auto;padding:2px 4px 4px 2px;">
       ${content}
@@ -41,7 +41,7 @@ export function renderDropdown(title: string, content: string, id?: string): str
 
 export function renderAddWorkspaceDialog(): string {
   const nextNumber = workspaces.length + 1
-  return `<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;">
+  return `<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;">
     <div style="background:${colors.white};border-radius:16px;padding:24px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
       <h2 style="font-size:16px;font-weight:600;color:${colors.text};margin:0 0 20px;">添加新画布</h2>
       <div style="margin-bottom:16px;">

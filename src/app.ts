@@ -28,20 +28,60 @@ import {
 import { renderDropdown, renderAddWorkspaceDialog, addStyles } from './ui'
 import { renderWorkspace } from './workspace'
 import { bindEvents } from './events'
+import { restoreState } from './persistence'
 import { 
   registerComponents, 
-  getComponentMenuItems
+  getComponentMenuItems,
+  getComponentDef
 } from './component-registry'
 
+function selectWorkspace(id: string) {
+  setCurrentWorkspaceId(id)
+  renderUI()
+}
+
+function deleteWorkspace(id: string) {
+  if (workspaces.length <= 1) {
+    alert('至少需要保留一个画布')
+    return
+  }
+  
+  const index = workspaces.findIndex(ws => ws.id === id)
+  if (index > -1) {
+    const newWorkspaces = [...workspaces]
+    newWorkspaces.splice(index, 1)
+    setWorkspaces(newWorkspaces)
+    if (currentWorkspaceId === id) {
+      setCurrentWorkspaceId(newWorkspaces[0].id)
+    }
+    setComponents(components.filter(c => !c.id.startsWith(id + '-')))
+    renderUI()
+  }
+}
+
+(window as any).selectWorkspace = selectWorkspace
+;(window as any).deleteWorkspace = deleteWorkspace
+
 export function renderUI() {
-  const app = document.getElementById('app')!
-  const floatBg = `background:${colors.white};backdrop-filter:blur(20px);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.04);`
-
-  const selectedComponent = components.find(c => c.id === selectedComponentId)
-
-  app.innerHTML = `
+  document.body.style.cssText = `
+    margin: 0;
+    padding: 0;
+    background: ${gridSettings.dotGridBackground};
+    background-image: radial-gradient(circle,${gridSettings.dotColor} ${gridSettings.dotSize}px,transparent ${gridSettings.dotSize}px);
+    background-size: ${gridSettings.dotSpacing}px ${gridSettings.dotSpacing}px;
+  `
+  
+  let maxX = 0, maxY = 0
+  workspaces.forEach(ws => {
+    const wsRight = ws.offset.x + ws.width
+    const wsBottom = ws.offset.y + ws.height
+    if (wsRight > maxX) maxX = wsRight
+    if (wsBottom > maxY) maxY = wsBottom
+  })
+  
+  document.body.innerHTML = `
     <!-- 顶部工具栏 -->
-    <div class="toolbar-shell" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;${floatBg}">
+    <div class="toolbar-shell" style="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99999;background:${colors.white};backdrop-filter:blur(20px);border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.04);">
       <div class="toolbar-brand">CodeMyPage</div>
       <div class="toolbar-group">
         <button id="btn-grid" class="btn ${showGridSettings ? 'active' : ''}">网格</button>
@@ -115,63 +155,74 @@ export function renderUI() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
           <div>
             <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">宽度(px)</label>
-            <input type="number" id="current-workspace-width" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.width || 1000}" class="inp" style="width:100%;">
+            <input type="number" id="current-workspace-width" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.width ?? 1000}" class="inp" style="width:100%;">
           </div>
           <div>
             <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">高度(px)</label>
-            <input type="number" id="current-workspace-height" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.height || 1600}" class="inp" style="width:100%;">
+            <input type="number" id="current-workspace-height" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.height ?? 1600}" class="inp" style="width:100%;">
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
           <div>
             <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">X 位置(px)</label>
-            <input type="number" id="current-workspace-x" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.offset.x || 0}" class="inp" style="width:100%;">
+            <input type="number" id="current-workspace-x" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.offset.x ?? 0}" class="inp" style="width:100%;">
           </div>
           <div>
             <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">Y 位置(px)</label>
-            <input type="number" id="current-workspace-y" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.offset.y || 60}" class="inp" style="width:100%;">
+            <input type="number" id="current-workspace-y" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.offset.y ?? 0}" class="inp" style="width:100%;">
           </div>
         </div>
-        <div style="height:1px;background:${colors.divider};margin:10px 0 8px;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">背景颜色</label>
-            <input type="color" id="canvas-color" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.canvasBackground || gridSettings.canvasBackground}" style="width:100%;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;">
-          </div>
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">圆角(px)</label>
-            <input type="number" id="canvas-radius" min="0" max="999" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.canvasBorderRadius || gridSettings.canvasBorderRadius}" class="inp" style="width:100%;">
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">背景颜色</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="canvas-color" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.canvasBackground || '#ffffff'}" class="inp" style="width:50px;height:28px;padding:0;">
+            <input type="text" id="canvas-color-text" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.canvasBackground || '#ffffff'}" class="inp" style="flex:1;">
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:${colors.textSecondary};cursor:pointer;background:${colors.white};padding:8px;border-radius:8px;border:1px solid ${colors.divider};">
-            <input type="checkbox" id="current-workspace-floating" ${workspaces.find(ws => ws.id === currentWorkspaceId)?.floating ? 'checked' : ''} style="accent-color:${colors.blue};">
-            悬浮画布
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:${colors.textSecondary};cursor:pointer;background:${colors.white};padding:8px;border-radius:8px;border:1px solid ${colors.divider};">
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">圆角(px)</label>
+          <input type="number" id="canvas-radius" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.canvasBorderRadius ?? 0}" class="inp" style="width:100%;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;">
             <input type="checkbox" id="current-workspace-shadow" ${workspaces.find(ws => ws.id === currentWorkspaceId)?.showShadow !== false ? 'checked' : ''} style="accent-color:${colors.blue};">
             显示阴影
           </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;">
+            <input type="checkbox" id="current-workspace-border" ${workspaces.find(ws => ws.id === currentWorkspaceId)?.showBorder !== false ? 'checked' : ''} style="accent-color:${colors.blue};">
+            显示边框
+          </label>
         </div>
-        <div id="shadow-options" style="margin-left:0;margin-bottom:2px;display:${workspaces.find(ws => ws.id === currentWorkspaceId)?.showShadow !== false ? 'block' : 'none'};">
-          <div style="font-size:11px;font-weight:600;color:${colors.blue};letter-spacing:0.02em;margin-bottom:6px;">阴影设置</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span style="font-size:12px;color:${colors.textSecondary};width:62px;">扩展(px)</span>
-            <input type="range" id="shadow-spread" min="-20" max="20" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowSpread ?? 0}" style="flex:1;accent-color:${colors.blue};">
+        <div style="margin-top:8px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;">
+            <input type="checkbox" id="current-workspace-floating" ${workspaces.find(ws => ws.id === currentWorkspaceId)?.floating ? 'checked' : ''} style="accent-color:${colors.blue};">
+            浮动层级
+          </label>
+        </div>
+        <div style="margin-top:12px;border-top:1px solid ${colors.divider};padding-top:12px;">
+          <h4 style="font-size:11px;font-weight:600;color:${colors.textSecondary};margin-bottom:8px;">阴影设置</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">模糊(px)</label>
+              <input type="number" id="shadow-blur" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowBlur ?? 20}" class="inp" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">扩散(px)</label>
+              <input type="number" id="shadow-spread" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowSpread ?? 0}" class="inp" style="width:100%;">
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span style="font-size:12px;color:${colors.textSecondary};width:62px;">模糊(px)</span>
-            <input type="range" id="shadow-blur" min="0" max="50" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowBlur ?? 20}" style="flex:1;accent-color:${colors.blue};">
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:${colors.textSecondary};width:62px;">阴影颜色</span>
-            <input type="color" id="shadow-color" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowColor ?? 'rgba(0,0,0,0.1)'}" style="width:100%;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;">
+          <div>
+            <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">阴影颜色</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="shadow-color" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowColor || 'rgba(0,0,0,0.1)'}" class="inp" style="width:50px;height:28px;padding:0;">
+              <input type="text" id="shadow-color-text" value="${workspaces.find(ws => ws.id === currentWorkspaceId)?.shadowColor || 'rgba(0,0,0,0.1)'}" class="inp" style="flex:1;">
+            </div>
           </div>
         </div>
       </div>
     `) : ''}
 
-    ${showComponentPanel ? renderDropdown('组件库', `
+    ${showComponentPanel ? renderDropdown('组件面板', `
       <div class="canvas-settings-section">
         <h3 class="canvas-settings-title">组件列表</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -202,160 +253,109 @@ export function renderUI() {
         拖拽组件到画布中
       </div>
     `) : ''}
-
-    ${showPropertyEditor && selectedComponent ? renderDropdown('组件属性', `
-      <div class="canvas-settings-section">
-        <h3 class="canvas-settings-title">尺寸设置</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">宽度</label>
-            <input type="number" id="prop-width" value="${selectedComponent.width}" class="inp" style="width:100%;">
-          </div>
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">高度</label>
-            <input type="number" id="prop-height" value="${selectedComponent.height}" class="inp" style="width:100%;">
-          </div>
-        </div>
-      </div>
-      
-      <div class="canvas-settings-section">
-        <h3 class="canvas-settings-title">文本设置</h3>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本内容</label>
-          <input type="text" id="prop-text" value="${selectedComponent.props.text || ''}" class="inp" style="width:100%;">
-        </div>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文字颜色</label>
-          <input type="color" id="prop-text-color" value="${selectedComponent.props.textColor || '#1d1d1f'}" style="width:100%;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;">
-        </div>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">字体大小</label>
-          <input type="number" id="prop-font-size" value="${selectedComponent.props.fontSize || 14}" class="inp" style="width:100%;">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文字 X</label>
-            <input type="number" id="prop-text-x" value="${selectedComponent.props.textX !== undefined ? selectedComponent.props.textX : 20}" class="inp" style="width:100%;">
-          </div>
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文字 Y</label>
-            <input type="number" id="prop-text-y" value="${selectedComponent.props.textY !== undefined ? selectedComponent.props.textY : 20}" class="inp" style="width:100%;">
-          </div>
-        </div>
-      </div>
-      
-      <div class="canvas-settings-section">
-        <h3 class="canvas-settings-title">外观设置</h3>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">背景颜色</label>
-          <input type="color" id="prop-bg" value="${selectedComponent.props.backgroundColor || '#ffffff'}" style="width:100%;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">边框颜色</label>
-            <input type="color" id="prop-border-color" value="${selectedComponent.props.borderColor || '#e5e5e5'}" style="width:100%;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;">
-          </div>
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">边框宽度</label>
-            <input type="number" id="prop-border-width" value="${selectedComponent.props.borderWidth || 1}" class="inp" style="width:100%;">
-          </div>
-        </div>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">圆角</label>
-          <input type="number" id="prop-radius" value="${selectedComponent.props.borderRadius || 8}" class="inp" style="width:100%;">
-        </div>
-      </div>
-      
-      <div class="canvas-settings-section">
-        <h3 class="canvas-settings-title">阴影设置</h3>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;margin-bottom:8px;">
-          <input type="checkbox" id="prop-shadow" ${selectedComponent.props.shadowEnabled ? 'checked' : ''} style="accent-color:${colors.blue};">
-          显示阴影
-        </label>
-        <div id="shadow-options" style="display:${selectedComponent.props.shadowEnabled ? 'block' : 'none'};">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span style="font-size:12px;color:${colors.textSecondary};width:40px;">模糊</span>
-            <input type="range" id="prop-shadow-blur" min="0" max="50" value="${selectedComponent.props.shadowBlur || 10}" style="flex:1;accent-color:${colors.blue};">
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span style="font-size:12px;color:${colors.textSecondary};width:40px;">扩展</span>
-            <input type="range" id="prop-shadow-spread" min="-20" max="20" value="${selectedComponent.props.shadowSpread || 0}" style="flex:1;accent-color:${colors.blue};">
-          </div>
-          <div>
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">颜色</label>
-            <input type="color" id="prop-shadow-color" value="${selectedComponent.props.shadowColor || 'rgba(0,0,0,0.1)'}" style="width:100%;height:28px;border:1px solid ${colors.divider};border-radius:6px;cursor:pointer;">
-          </div>
-        </div>
-      </div>
-      
-      <button id="btn-delete-component" style="width:100%;height:32px;font-size:13px;font-weight:500;color:${colors.white};background:${colors.red};border:none;border-radius:8px;cursor:pointer;margin-top:8px;">
-        删除组件
-      </button>
-    `) : ''}
-
-    <!-- 缩放 -->
-    <div style="position:fixed;bottom:16px;right:16px;z-index:100;${floatBg}display:flex;align-items:center;height:40px;padding:0 4px;">
-      <button id="zoom-out" class="icon-btn">−</button>
-      <span style="width:48px;text-align:center;font-size:13px;font-weight:500;color:${colors.text};">100%</span>
-      <button id="zoom-in" class="icon-btn">+</button>
-    </div>
-
-    ${showAddWorkspaceDialog ? renderAddWorkspaceDialog() : ''}
-
-    <input type="file" id="file-input" accept=".json" style="display:none;">
   `
 
+  const selectedComponent = components.find(c => c.id === selectedComponentId)
+  
+  if (selectedComponent && showPropertyEditor) {
+    const def = getComponentDef(selectedComponent.type)
+    if (def) {
+      const props = selectedComponent.props || {}
+      const panelContent = `
+        <div style="padding:16px;max-height:400px;overflow-y:auto;">
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本内容</label>
+            <input type="text" id="prop-text" value="${props.text || ''}" class="inp" style="width:100%;" placeholder="输入文本...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本 X</label>
+              <input type="number" id="prop-text-x" value="${props.textX ?? 20}" class="inp" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本 Y</label>
+              <input type="number" id="prop-text-y" value="${props.textY ?? 20}" class="inp" style="width:100%;">
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">字号 (${props.fontSize || 16}px)</label>
+            <input type="range" id="prop-font-size" min="10" max="72" value="${props.fontSize || 16}" class="inp" style="width:100%;accent-color:${colors.blue};">
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文字颜色</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="prop-text-color" value="${props.textColor || '#1d1d1f'}" style="width:32px;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;padding:0;">
+              <input type="text" id="prop-text-color-text" value="${props.textColor || '#1d1d1f'}" class="inp" style="flex:1;">
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">背景颜色</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" id="prop-bg" value="${props.backgroundColor || '#ffffff'}" style="width:32px;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;padding:0;">
+              <input type="text" id="prop-bg-text" value="${props.backgroundColor || '#ffffff'}" class="inp" style="flex:1;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">边框颜色</label>
+              <input type="color" id="prop-border-color" value="${props.borderColor || '#e5e5e5'}" style="width:100%;height:28px;border:1px solid ${colors.divider};border-radius:6px;cursor:pointer;padding:0;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">边框粗细</label>
+              <input type="number" id="prop-border-width" value="${props.borderWidth ?? 1}" class="inp" style="width:100%;">
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">圆角 (${props.borderRadius || 0}px)</label>
+            <input type="range" id="prop-radius" min="0" max="100" value="${props.borderRadius || 0}" class="inp" style="width:100%;accent-color:${colors.blue};">
+          </div>
+          <div style="margin-bottom:12px;border-top:1px solid ${colors.divider};padding-top:12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;margin-bottom:8px;">
+              <input type="checkbox" id="prop-shadow" ${props.shadowEnabled !== false ? 'checked' : ''} style="accent-color:${colors.blue};">
+              启用阴影
+            </label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div>
+                <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">模糊</label>
+                <input type="number" id="prop-shadow-blur" value="${props.shadowBlur ?? 20}" class="inp" style="width:100%;">
+              </div>
+              <div>
+                <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">扩散</label>
+                <input type="number" id="prop-shadow-spread" value="${props.shadowSpread ?? 0}" class="inp" style="width:100%;">
+              </div>
+            </div>
+            <div>
+              <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">阴影颜色</label>
+              <input type="color" id="prop-shadow-color" value="${props.shadowColor || 'rgba(0,0,0,0.1)'}" style="width:100%;height:28px;border:1px solid ${colors.divider};border-radius:6px;cursor:pointer;padding:0;">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid ${colors.divider};padding-top:12px;">
+            <div>
+              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">宽度</label>
+              <input type="number" id="prop-width" value="${selectedComponent.width || def.defaultWidth}" class="inp" style="width:100%;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">高度</label>
+              <input type="number" id="prop-height" value="${selectedComponent.height || def.defaultHeight}" class="inp" style="width:100%;">
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:11px;color:${colors.textSecondary};">
+              位置: (${Math.round(selectedComponent.x)}, ${Math.round(selectedComponent.y)})
+            </div>
+            <button id="btn-delete-component" style="font-size:12px;color:${colors.red};background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;">删除组件</button>
+          </div>
+        </div>
+      `
+      document.body.insertAdjacentHTML('beforeend', renderDropdown(`${def.name} 属性`, panelContent, 'panel-properties'))
+    }
+  }
+  
+  if (showAddWorkspaceDialog) {
+    document.body.insertAdjacentHTML('beforeend', renderAddWorkspaceDialog())
+  }
+  
+  renderWorkspace()
   addStyles()
   bindEvents()
-  renderWorkspace()
 }
-
-// ==================== 初始化 ====================
-async function init() {
-  // 首先注册组件
-  await registerComponents()
-  
-  const match = document.cookie.match(/(?:^|; )codemypage=([^;]*)/)
-  if (match) {
-    try {
-      const data = JSON.parse(decodeURIComponent(match[1]))
-      if (data.gridSettings) setGridSettings({ ...gridSettings, ...data.gridSettings })
-      if (data.workspaces) setWorkspaces(data.workspaces)
-      if (data.components) setComponents(data.components)
-    } catch {}
-  }
-  renderUI()
-  window.addEventListener('resize', () => renderWorkspace())
-}
-
-// ==================== 全局函数 ====================
-function selectWorkspace(id: string) {
-  setCurrentWorkspaceId(id)
-  renderUI()
-}
-
-function deleteWorkspace(id: string) {
-  if (workspaces.length <= 1) {
-    alert('至少需要保留一个画布')
-    return
-  }
-  
-  const index = workspaces.findIndex(ws => ws.id === id)
-  if (index > -1) {
-    const newWorkspaces = [...workspaces]
-    newWorkspaces.splice(index, 1)
-    setWorkspaces(newWorkspaces)
-    if (currentWorkspaceId === id) {
-      setCurrentWorkspaceId(newWorkspaces[0].id)
-    }
-    // 删除画布下的组件
-    setComponents(components.filter(c => !c.id.startsWith(id + '-')))
-    renderUI()
-  }
-}
-
-// 将函数暴露到全局作用域
-(window as any).selectWorkspace = selectWorkspace
-;(window as any).deleteWorkspace = deleteWorkspace
-
-init()

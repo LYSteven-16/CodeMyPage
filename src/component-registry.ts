@@ -60,7 +60,8 @@ export function renderComponentSnapshot(
   container: HTMLElement,
   width: number,
   height: number,
-  props?: ComponentProps
+  props?: ComponentProps,
+  id?: string
 ): HTMLElement | null {
   const def = getComponentDef(type);
   if (!def) {
@@ -72,6 +73,10 @@ export function renderComponentSnapshot(
     // 克隆 molecule 数据，避免污染原始定义
     const moleculeData = JSON.parse(JSON.stringify(def.molecule));
     moleculeData.position = { x: 0, y: 0 };
+    // 设置组件 ID，用于事件绑定
+    if (id) {
+      moleculeData.id = id;
+    }
     
     // 辅助函数：将 hex 颜色转换为 RGB 数组
     const hexToRgb = (hex: string): [number, number, number] => {
@@ -196,6 +201,10 @@ export function renderComponentSnapshot(
       element.style.height = `${height}px`;
       // Workspace 内组件需要可命中，才能触发选中与拖拽事件
       element.style.pointerEvents = 'auto';
+      // 设置 data-id 属性，用于组件选择和事件绑定
+      if (id) {
+        element.dataset.id = id;
+      }
       container.appendChild(element);
       return element;
     }
@@ -238,7 +247,7 @@ export function renderComponentToWorkspace(
   instance: ComponentInstance,
   container: HTMLElement
 ): HTMLElement | null {
-  return renderComponentSnapshot(instance.type, instance.x, instance.y, container, instance.width, instance.height, instance.props);
+  return renderComponentSnapshot(instance.type, instance.x, instance.y, container, instance.width, instance.height, instance.props, instance.id);
 }
 
 // 初始化注册

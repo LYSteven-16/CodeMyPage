@@ -23,6 +23,22 @@ interface GridSettings {
   dotGridBackground: string
 }
 
+interface Workspace {
+  id: string
+  name: string
+  offset: { x: number; y: number }
+  width: number
+  height: number
+  floating?: boolean
+  showShadow?: boolean
+  showBorder?: boolean
+  canvasBackground?: string
+  canvasBorderRadius?: number
+  shadowBlur?: number
+  shadowSpread?: number
+  shadowColor?: string
+}
+
 // ==================== 常量 ====================
 const CANVAS_WIDTH = 1000
 
@@ -153,7 +169,6 @@ function initPreview() {
   const app = document.getElementById('app')
   if (!app) return
 
-  // 从 localStorage 获取数据
   const dataStr = localStorage.getItem('codemypage-preview')
   
   if (!dataStr) {
@@ -174,9 +189,10 @@ function initPreview() {
   try {
     const data = JSON.parse(dataStr)
     const components: EditorComponent[] = data.components || []
+    const workspaces: Workspace[] = data.workspaces || []
     const gridSettings: GridSettings = data.gridSettings || {}
     
-    if (components.length === 0) {
+    if (components.length === 0 && workspaces.length === 0) {
       app.innerHTML = `
         <div class="header">
           <h1>预览模式</h1>
@@ -191,38 +207,19 @@ function initPreview() {
       return
     }
 
-    // 计算画布高度
-    let canvasHeight = 1200
-    components.forEach(comp => {
-      const bottom = (comp.y || 0) + (comp.height || 100)
-      if (bottom + 200 > canvasHeight) canvasHeight = bottom + 200
+    const useMultipleWorkspaces = workspaces.length > 0
+
+    console.log('[Preview] Data loaded:', {
+      workspaceCount: workspaces.length,
+      workspaces: workspaces.map(w => ({ id: w.id, name: w.name, width: w.width, height: w.height })),
+      componentCount: components.length
     })
 
-    // 渲染页面
-    app.innerHTML = `
-      <div class="header">
-        <h1>预览模式</h1>
-        <button onclick="window.close()">返回编辑</button>
-      </div>
-      <div class="content">
-        <div id="canvas" class="canvas" style="height: ${canvasHeight}px; background: ${gridSettings.canvasBackground || '#ffffff'}; border-radius: ${gridSettings.canvasBorderRadius || 16}px;"></div>
-      </div>
-    `
-
-    const canvas = document.getElementById('canvas')
-    if (!canvas) return
-
-    // 创建分子（使用引擎的完整功能）
-    const molecules = components.map(c => componentToMolecule(c))
-
-    // 使用引擎渲染（完整功能）
-    const manager = new BeakerManager(molecules, canvas, {
-      position: { x: 0, y: 0 },
-      width: CANVAS_WIDTH,
-      height: canvasHeight
-    })
-
-    console.log('Preview rendered successfully with', components.length, 'components')
+    if (useMultipleWorkspaces) {
+      renderMultipleWorkspaces(app, components, workspaces, gridSettings)
+    } else {
+      renderSingleCanvas(app, components, gridSettings)
+    }
   } catch (err) {
     console.error('预览加载失败:', err)
     app.innerHTML = `
@@ -237,6 +234,102 @@ function initPreview() {
       </div>
     `
   }
+}
+
+function renderSingleCanvas(app: HTMLElement, components: EditorComponent[], gridSettings: GridSettings) {
+  let canvasHeight = 1200
+  components.forEach(comp => {
+    const bottom = (comp.y || 0) + (comp.height || 100)
+    if (bottom + 200 > canvasHeight) canvasHeight = bottom + 200
+  })
+
+  app.innerHTML = `
+    <div class="header">
+      <h1>预览模式</h1>
+      <button onclick="window.close()">返回编辑</button>
+    </div>
+    <div class="content">
+      <div id="canvas" class="canvas" style="height: ${canvasHeight}px; background: ${gridSettings.canvasBackground || '#ffffff'}; border-radius: ${gridSettings.canvasBorderRadius || 16}px;"></div>
+    </div>
+  `
+
+  const canvas = document.getElementById('canvas')
+  if (!canvas) return
+
+  const molecules = components.map(c => componentToMolecule(c)).filter(Boolean)
+  const manager = new BeakerManager(molecules, canvas, {
+    position: { x: 0, y: 0 },
+    width: CANVAS_WIDTH,
+    height: canvasHeight
+  })
+  console.log('Preview rendered successfully with', components.length, 'components')
+}
+
+function renderMultipleWorkspaces(app: HTMLElement, components: EditorComponent[], workspaces: Workspace[], gridSettings: GridSettings) {
+  let maxX = 0, maxY = 0
+  workspaces.forEach(ws => {
+    const wsRight = ws.offset.x + ws.width
+    const wsBottom = ws.offset.y + ws.height
+    if (wsRight > maxX) maxX = wsRight
+    if (wsBottom > maxY) maxY = wsBottom
+  })
+
+  const containerWidth = maxX + 100
+  const containerHeight = maxY + 100
+
+  app.innerHTML = `
+    <div class="header">
+      <h1>预览模式</h1>
+      <button onclick="window.close()">返回编辑</button>
+    </div>
+    <div class="content" style="align-items: flex-start;">
+      <div id="workspaces-container" class="workspaces-container" style="position: relative; width: ${containerWidth}px; height: ${containerHeight}px;">
+      </div>
+    </div>
+  `
+
+  const container = document.getElementById('workspaces-container')
+  if (!container) return
+
+  console.log('[Preview] Container size:', containerWidth, 'x', containerHeight)
+  console.log('[Preview] Workspaces:', workspaces.map(w => ({
+    id: w.id,
+    name: w.name,
+    offset: w.offset,
+    size: `${w.width}x${w.height}`
+  })))
+
+  workspaces.forEach(workspace => {
+    const wsComponents = components.filter(c => c.id.startsWith(workspace.id + '-'))
+    
+    console.log('[Preview] Workspace:', workspace.id, '| Components in workspace:', wsComponents.length, '| Total components:', components.length)
+    console.log('[Preview] Component IDs:', components.map(c => c.id).slice(0, 5))
+    
+    if (wsComponents.length > 0) {
+      const molecules = wsComponents.map(c => componentToMolecule(c)).filter(Boolean)
+      console.log('[Preview] Creating BeakerManager for', workspace.name, {
+        width: workspace.width,
+        height: workspace.height
+      })
+      const manager = new BeakerManager(molecules, container, {
+        position: { x: workspace.offset.x, y: workspace.offset.y },
+        width: workspace.width,
+        height: workspace.height,
+        backgroundColor: workspace.canvasBackground || gridSettings.canvasBackground || '#ffffff',
+        borderRadius: workspace.canvasBorderRadius ?? gridSettings.canvasBorderRadius ?? 0,
+        showShadow: workspace.showShadow !== false,
+        shadowBlur: workspace.shadowBlur ?? 20,
+        shadowSpread: workspace.shadowSpread ?? 0,
+        shadowColor: workspace.shadowColor ?? 'rgba(0,0,0,0.1)'
+      })
+      console.log('[Preview] BeakerManager created, workplace:', manager.getWorkplace())
+      console.log('[Preview] Workplace styles:', manager.getWorkplace().style.cssText)
+    } else {
+      console.log('[Preview] No components found for workspace', workspace.id, '- canvas not created')
+    }
+  })
+  
+  console.log('Preview rendered', workspaces.length, 'workspaces with', components.length, 'total components')
 }
 
 // ==================== 样式 ====================
@@ -307,6 +400,17 @@ style.textContent = `
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
     position: relative;
     overflow: visible;
+  }
+  
+  .workspace-canvas {
+    min-height: 100px;
+    overflow: hidden;
+  }
+  
+  .workspaces-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   
   .empty {

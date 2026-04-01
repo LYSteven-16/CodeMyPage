@@ -1,10 +1,11 @@
 // ==================== 事件绑定 ====================
 import { colors } from './constants'
-import html2canvas from 'html2canvas'
+import { generateExportHTML } from './export-utils'
 import { 
   gridSettings, 
   workspaces, 
   currentWorkspaceId,
+  defaultWorkspace,
   showGridSettings,
   showBgSettings,
   showCanvasSettings,
@@ -73,8 +74,14 @@ export function bindEvents() {
         height: comp.height,
         props: comp.props || {}
       })),
+      workspaces: workspaces,
       gridSettings
     }
+    console.log('[Editor] Preview data:', {
+      workspaceCount: workspaces.length,
+      workspaces: workspaces.map(w => ({ id: w.id, name: w.name })),
+      componentCount: components.length
+    })
     localStorage.setItem('codemypage-preview', JSON.stringify(previewData))
     window.open('/CodeMyPage/preview.html', '_blank')
   })
@@ -153,60 +160,18 @@ export function bindEvents() {
   }
 
   ;(window as any).exportOfflineHTML = async () => {
-    const container = document.createElement('div')
-    container.style.cssText = 'position:fixed;left:-9999px;top:0;'
-    document.body.appendChild(container)
-
     const workspace = workspaces.find(ws => ws.id === currentWorkspaceId)
-    if (!workspace) {
-      document.body.removeChild(container)
-      return
-    }
+    if (!workspace) return
 
-    const workspaceDiv = document.createElement('div')
-    workspaceDiv.style.cssText = `
-      position: relative;
-      width: ${workspace.width}px;
-      min-height: ${workspace.height}px;
-      background: ${workspace.canvasBackground};
-      border-radius: ${workspace.canvasBorderRadius}px;
-      box-shadow: ${workspace.showShadow ? `${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowSpread}px ${workspace.shadowColor}` : 'none'};
-      margin: 40px auto;
-    `
-
-    for (const comp of components) {
-      const compContainer = document.createElement('div')
-      compContainer.style.cssText = `position:absolute;left:${comp.x}px;top:${comp.y}px;width:${comp.width}px;height:${comp.height}px;`
-      renderComponentSnapshot(comp.type, 0, 0, compContainer, comp.width, comp.height, comp.props)
-      workspaceDiv.appendChild(compContainer)
-    }
-
-    container.appendChild(workspaceDiv)
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    const canvas = await html2canvas(workspaceDiv, { scale: 2 })
-    const imgData = canvas.toDataURL('image/png')
-
-    document.body.removeChild(container)
-
-    const htmlContent = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CodeMyPage Export</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #f5f5f7; min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; }
-    img { max-width: 100%; height: auto; }
-  </style>
-</head>
-<body>
-  <img src="${imgData}" alt="CodeMyPage Export">
-</body>
-</html>`
+    const htmlContent = await generateExportHTML({
+      workspace,
+      components,
+      gridSettings
+    })
+    console.log('[Export] 生成的 HTML 大小:', htmlContent.length, '字节', '(约', Math.round(htmlContent.length / 1024), 'KB)')
 
     const blob = new Blob([htmlContent], { type: 'text/html' })
+    console.log('[Export] Blob 大小:', blob.size, '字节')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = 'codemypage-export.html'
@@ -214,61 +179,20 @@ export function bindEvents() {
   }
 
   ;(window as any).exportPDF = async () => {
-    const container = document.createElement('div')
-    container.style.cssText = 'position:fixed;left:-9999px;top:0;'
-    document.body.appendChild(container)
-
     const workspace = workspaces.find(ws => ws.id === currentWorkspaceId)
-    if (!workspace) {
-      document.body.removeChild(container)
-      return
-    }
+    if (!workspace) return
 
-    const workspaceDiv = document.createElement('div')
-    workspaceDiv.style.cssText = `
-      position: relative;
-      width: ${workspace.width}px;
-      min-height: ${workspace.height}px;
-      background: ${workspace.canvasBackground};
-      border-radius: ${workspace.canvasBorderRadius}px;
-      box-shadow: ${workspace.showShadow ? `${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowBlur}px ${workspace.shadowSpread}px ${workspace.shadowColor}` : 'none'};
-      margin: 40px auto;
-    `
-
-    for (const comp of components) {
-      const compContainer = document.createElement('div')
-      compContainer.style.cssText = `position:absolute;left:${comp.x}px;top:${comp.y}px;width:${comp.width}px;height:${comp.height}px;`
-      renderComponentSnapshot(comp.type, 0, 0, compContainer, comp.width, comp.height, comp.props)
-      workspaceDiv.appendChild(compContainer)
-    }
-
-    container.appendChild(workspaceDiv)
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    const canvas = await html2canvas(workspaceDiv, { scale: 2 })
-    const imgData = canvas.toDataURL('image/png')
-
-    document.body.removeChild(container)
+    const htmlContent = await generateExportHTML({
+      workspace,
+      components,
+      gridSettings
+    })
 
     const printWindow = window.open('', '_blank')!
-    printWindow.document.write(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>CodeMyPage Export</title>
-  <style>
-    @page { margin: 0; }
-    body { margin: 0; }
-    img { max-width: 100%; height: auto; }
-  </style>
-</head>
-<body>
-  <img src="${imgData}" onload="window.print();window.close();">
-</body>
-</html>`)
+    printWindow.document.write(htmlContent)
     printWindow.document.close()
   }
-  document.getElementById('btn-reset')?.addEventListener('click', () => { if (confirm('确认重置？')) { setComponents([]); renderUI() } })
+  document.getElementById('btn-reset')?.addEventListener('click', () => { if (confirm('确认重置？')) { setComponents([]); setWorkspaces([{ ...defaultWorkspace }]); setCurrentWorkspaceId('workspace-1'); renderUI() } })
   document.getElementById('btn-save')?.addEventListener('click', () => {
     const data = JSON.stringify({ gridSettings, workspaces, components })
     document.cookie = `codemypage=${encodeURIComponent(data)};max-age=${30*86400};path=/`
@@ -284,6 +208,15 @@ export function bindEvents() {
   })
   document.getElementById('bg-color')?.addEventListener('input', (e) => { setGridSettings({...gridSettings, dotGridBackground: (e.target as HTMLInputElement).value}); renderUI() })
   document.getElementById('canvas-color')?.addEventListener('input', (e) => { 
+    const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
+    if (currentWorkspace) {
+      currentWorkspace.canvasBackground = (e.target as HTMLInputElement).value
+      const textInput = document.getElementById('canvas-color-text') as HTMLInputElement
+      if (textInput) textInput.value = currentWorkspace.canvasBackground
+      renderUI()
+    }
+  })
+  document.getElementById('canvas-color-text')?.addEventListener('change', (e) => {
     const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
     if (currentWorkspace) {
       currentWorkspace.canvasBackground = (e.target as HTMLInputElement).value
@@ -326,6 +259,15 @@ export function bindEvents() {
     }
   })
   document.getElementById('shadow-color')?.addEventListener('input', (e) => {
+    const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
+    if (currentWorkspace) {
+      currentWorkspace.shadowColor = (e.target as HTMLInputElement).value
+      const textInput = document.getElementById('shadow-color-text') as HTMLInputElement
+      if (textInput) textInput.value = currentWorkspace.shadowColor
+      renderUI()
+    }
+  })
+  document.getElementById('shadow-color-text')?.addEventListener('change', (e) => {
     const currentWorkspace = workspaces.find(ws => ws.id === currentWorkspaceId)
     if (currentWorkspace) {
       currentWorkspace.shadowColor = (e.target as HTMLInputElement).value
@@ -465,27 +407,6 @@ export function bindEvents() {
       })
     }
   })
-  
-  document.addEventListener('mousemove', (e) => {
-    if (draggedPanel) {
-      const newX = e.clientX - panelDragOffset.x
-      const newY = e.clientY - panelDragOffset.y
-      draggedPanel.style.left = `${newX}px`
-      draggedPanel.style.top = `${newY}px`
-      draggedPanel.style.transform = 'none'
-    }
-  })
-  
-  document.addEventListener('mouseup', () => {
-    if (draggedPanel) {
-      // 保存面板位置
-      const panelId = draggedPanel.id
-      const rect = draggedPanel.getBoundingClientRect()
-      setPanelPositions({...panelPositions, [panelId]: { x: rect.left, y: rect.top }})
-      draggedPanel.style.cursor = 'move'
-      draggedPanel = null
-    }
-  })
 
   // 组件拖拽
   let dragPreview: HTMLElement | null = null
@@ -552,9 +473,30 @@ export function bindEvents() {
   if (showPropertyEditor && selectedComponentId) {
     bindPropertyEditorEvents()
   }
-
+  
   // 全局拖拽事件（只绑定一次）
   if (!globalEventsBound) {
+    document.addEventListener('mousemove', (e) => {
+      if (draggedPanel) {
+        const newX = e.clientX - panelDragOffset.x
+        const newY = e.clientY - panelDragOffset.y
+        draggedPanel.style.left = `${newX}px`
+        draggedPanel.style.top = `${newY}px`
+        draggedPanel.style.transform = 'none'
+      }
+    })
+    
+    document.addEventListener('mouseup', () => {
+      if (draggedPanel) {
+        // 保存面板位置
+        const panelId = draggedPanel.id
+        const rect = draggedPanel.getBoundingClientRect()
+        setPanelPositions({...panelPositions, [panelId]: { x: rect.left, y: rect.top }})
+        draggedPanel.style.cursor = 'move'
+        draggedPanel = null
+      }
+    })
+
     document.addEventListener('mousemove', handleDrag)
     document.addEventListener('mouseup', endDrag)
     document.addEventListener('click', (e) => {
@@ -565,6 +507,8 @@ export function bindEvents() {
         setSelectedComponentId(null)
         setShowPropertyEditor(false)
         renderUI()
+      } else {
+        console.log(`[Events] Click outside component, clearing selection`)
       }
     })
     setGlobalEventsBound(true)
@@ -592,10 +536,24 @@ function bindPropertyEditorEvents() {
   
   document.getElementById('prop-bg')?.addEventListener('input', (e) => {
     selected.props.backgroundColor = (e.target as HTMLInputElement).value
+    const textInput = document.getElementById('prop-bg-text') as HTMLInputElement
+    if (textInput) textInput.value = selected.props.backgroundColor
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-bg-text')?.addEventListener('change', (e) => {
+    selected.props.backgroundColor = (e.target as HTMLInputElement).value
     renderWorkspace()
   })
   
   document.getElementById('prop-text-color')?.addEventListener('input', (e) => {
+    selected.props.textColor = (e.target as HTMLInputElement).value
+    const textInput = document.getElementById('prop-text-color-text') as HTMLInputElement
+    if (textInput) textInput.value = selected.props.textColor
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-text-color-text')?.addEventListener('change', (e) => {
     selected.props.textColor = (e.target as HTMLInputElement).value
     renderWorkspace()
   })
@@ -659,95 +617,26 @@ function bindPropertyEditorEvents() {
 }
 
 export function bindComponentEvents() {
-  // 为每个 workspace 绑定独立的事件
-  workspaces.forEach(workspace => {
-    const workspaceEl = document.getElementById(workspace.id)
-    if (!workspaceEl) return
+  console.log('[Events] bindComponentEvents called')
+  const workspaces = document.querySelectorAll('.atom-engine-workplace, .workspace')
+  console.log(`[Events] Found ${workspaces.length} workspaces`)
+  
+  workspaces.forEach(workspaceEl => {
+    const workspaceId = workspaceEl.id
+    console.log(`[Events] Binding events to workspace: ${workspaceId}`)
     
-    // 移除旧的事件监听器（通过克隆元素）
-    const newWorkspaceEl = workspaceEl.cloneNode(true) as HTMLElement
-    workspaceEl.parentNode?.replaceChild(newWorkspaceEl, workspaceEl)
-    
-    newWorkspaceEl.addEventListener('dragover', (e) => {
-      e.preventDefault()
-    })
-    
-    newWorkspaceEl.addEventListener('drop', (e) => {
-      e.preventDefault()
-      const event = e as DragEvent
-      const type = event.dataTransfer?.getData('component-type')
-      if (!type) return
+    // 为组件元素绑定 mousedown 事件用于拖拽
+    workspaceEl.querySelectorAll('[data-id]').forEach(el => {
+      const componentEl = el as HTMLElement
+      const componentId = componentEl.dataset.id
+      if (!componentId) return
       
-      const workspaceData = workspaces.find(w => w.id === workspace.id)
-      if (!workspaceData) return
-      
-      // 从组件注册中心获取组件定义
-      const componentDef = getComponentDef(type)
-      if (!componentDef) {
-        console.error(`[Events] 未找到组件定义: ${type}`)
-        return
-      }
-      
-      const rect = newWorkspaceEl.getBoundingClientRect()
-      let x = event.clientX - rect.left - componentDef.defaultWidth / 2
-      let y = event.clientY - rect.top - componentDef.defaultHeight / 2
-      
-      // 网格吸附
-      if (gridSettings.snapToGrid) {
-        x = Math.round(x / gridSettings.dotSpacing) * gridSettings.dotSpacing
-        y = Math.round(y / gridSettings.dotSpacing) * gridSettings.dotSpacing
-      }
-      
-      // 使用组件注册中心生成快照
-      const snapshotElement = renderComponentSnapshot(
-        type,
-        Math.max(0, Math.min(x, workspaceData.width - componentDef.defaultWidth)),
-        Math.max(0, Math.min(y, workspaceData.height - componentDef.defaultHeight)),
-        newWorkspaceEl,
-        componentDef.defaultWidth,
-        componentDef.defaultHeight
-      )
-      
-      if (snapshotElement) {
-        // 创建组件实例记录
-        const newComponent: ComponentInstance = {
-          id: `${workspace.id}-component-${Date.now()}`,
-          type: type,
-          x: Math.max(0, Math.min(x, workspaceData.width - componentDef.defaultWidth)),
-          y: Math.max(0, Math.min(y, workspaceData.height - componentDef.defaultHeight)),
-          width: componentDef.defaultWidth,
-          height: componentDef.defaultHeight,
-          selected: false,
-          props: {
-            text: componentDef.molecule?.atoms?.find((atom: any) => atom?.capability === 'text')?.text || ''
-          }
-        }
-        
-        setComponents([...components, newComponent])
-        renderUI()
-        
-        // 添加放置动画效果
-        requestAnimationFrame(() => {
-          const placedElement = document.querySelector(`[data-id="${newComponent.id}"]`) as HTMLElement
-          if (placedElement) {
-            placedElement.style.animation = 'componentDrop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }
-        })
-      }
-    })
-    
-    newWorkspaceEl.querySelectorAll('.canvas-component').forEach(el => {
-      const element = el as HTMLElement
-      const componentId = element.dataset.id
-      
-      element.addEventListener('mousedown', (e) => {
-        if (!componentId) return
-        
+      componentEl.addEventListener('mousedown', (e) => {
         const component = components.find(c => c.id === componentId)
         if (!component) return
         
         setSelectedComponentId(componentId)
-        setCurrentWorkspaceId(workspace.id)  // 确保更新当前 workspace
+        setCurrentWorkspaceId(workspaceId)
         setShowPropertyEditor(true)
         setShowGridSettings(false)
         setShowBgSettings(false)
@@ -755,13 +644,14 @@ export function bindComponentEvents() {
         setShowComponentPanel(false)
         setDraggedComponent(component)
         
-        const rect = element.getBoundingClientRect()
+        const rect = componentEl.getBoundingClientRect()
         setDragOffset({
           x: e.clientX - rect.left,
           y: e.clientY - rect.top
         })
         
-        element.style.zIndex = '100'
+        console.log(`[Events] Component mousedown: ${componentId}`)
+        e.stopPropagation()
         renderUI()
       })
     })
