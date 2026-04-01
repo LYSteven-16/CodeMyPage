@@ -32,10 +32,11 @@ jobs:
 
       - name: Clone and build atom-engine
         run: |
-          git clone https://github.com/LYSteven-16/atom-engine.git /tmp/atom-engine
+          git clone --depth 1 https://github.com/LYSteven-16/atom-engine.git /tmp/atom-engine
           cd /tmp/atom-engine
           npm install
           npm run build
+          mkdir -p ${{ github.workspace }}/node_modules/@component-chemistry/atom-engine/dist/
           cp -r dist/* ${{ github.workspace }}/node_modules/@component-chemistry/atom-engine/dist/
 
       - name: Build all (main app + export bundle)
