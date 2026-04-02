@@ -204,10 +204,6 @@ export function bindEvents() {
     printWindow.document.close()
   }
   document.getElementById('btn-reset')?.addEventListener('click', () => { if (confirm('确认重置？')) { setComponents([]); setWorkspaces([{ ...defaultWorkspace }]); setCurrentWorkspaceId('workspace-1'); renderUI() } })
-  document.getElementById('btn-save')?.addEventListener('click', () => {
-    const data = JSON.stringify({ gridSettings, workspaces, components })
-    document.cookie = `codemypage=${encodeURIComponent(data)};max-age=${30*86400};path=/`
-  })
 
   document.getElementById('snap-toggle')?.addEventListener('change', (e) => { setGridSettings({...gridSettings, snapToGrid: (e.target as HTMLInputElement).checked}); renderUI() })
   document.getElementById('spacing')?.addEventListener('input', (e) => {

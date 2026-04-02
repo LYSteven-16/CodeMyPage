@@ -14,7 +14,6 @@ import {
 } from './state'
 
 const STORAGE_KEY = 'codemypage-state'
-const COOKIE_KEY = 'codemypage'
 
 export interface PersistedState {
   gridSettings: GridSettings
@@ -35,7 +34,6 @@ export function saveState() {
   try {
     const data = JSON.stringify(state)
     localStorage.setItem(STORAGE_KEY, data)
-    document.cookie = `${COOKIE_KEY}=${encodeURIComponent(data)};max-age=${365*86400};path=/;SameSite=Lax`
   } catch (e) {
     console.warn('保存状态失败:', e)
   }
@@ -46,13 +44,6 @@ export function loadState(): PersistedState | null {
     const data = localStorage.getItem(STORAGE_KEY)
     if (data) {
       return JSON.parse(data)
-    }
-    const cookies = document.cookie.split(';')
-    for (const cookie of cookies) {
-      const [key, value] = cookie.trim().split('=')
-      if (key === COOKIE_KEY) {
-        return JSON.parse(decodeURIComponent(value))
-      }
     }
   } catch (e) {
     console.warn('加载状态失败:', e)
@@ -75,5 +66,4 @@ export function restoreState() {
 
 export function clearState() {
   localStorage.removeItem(STORAGE_KEY)
-  document.cookie = `${COOKIE_KEY}=;max-age=0;path=/`
 }

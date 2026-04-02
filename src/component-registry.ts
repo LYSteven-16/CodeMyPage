@@ -1,5 +1,5 @@
 // ==================== 组件注册中心 ====================
-// 启动时自动扫描 src/components/*.json，注册所有可用组件
+// 启动时自动扫描 src/components/*.config，注册所有可用组件
 // 新增组件只需放入 components/ 目录，无需修改任何代码
 
 import { BeakerManager } from '@LYSteven-16/atom-engine';
@@ -25,9 +25,9 @@ export let registeredComponents: ComponentMeta[] = [];
 export function registerComponents() {
   registeredComponents = [];
   
-  // 手动导入 components 目录下的所有 JSON
+  // 手动导入 components 目录下的所有配置
   // Vite 支持 import.meta.glob 动态导入
-  const modules = import.meta.glob('./components/*.json', { eager: true }) as Record<string, any>;
+  const modules = import.meta.glob('./components/*.config', { eager: true }) as Record<string, any>;
   
   for (const path in modules) {
     const mod = modules[path];
