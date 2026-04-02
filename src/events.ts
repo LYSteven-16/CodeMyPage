@@ -75,6 +75,7 @@ export function bindEvents() {
         y: comp.y,
         width: comp.width,
         height: comp.height,
+        zIndex: comp.zIndex,
         props: comp.props || {}
       })),
       workspaces: workspaces,

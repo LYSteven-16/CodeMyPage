@@ -184,16 +184,11 @@ export function renderWorkspace() {
           htmlChild.dataset.id = componentId
           console.log(`[Workspace] Set data-id="${componentId}" on child ${i}`)
           
-          if (component && component.zIndex !== undefined) {
-            htmlChild.style.zIndex = String(component.zIndex)
-          }
-          
           // 如果是选中的组件，应用高亮样式
           if (componentId === selectedComponentId) {
             htmlChild.classList.add('component-selected')
             htmlChild.style.outline = '2px solid #3b82f6'
             htmlChild.style.outlineOffset = '2px'
-            htmlChild.style.zIndex = '100'
           }
         }
       })
