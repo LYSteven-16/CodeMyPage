@@ -25,9 +25,9 @@ export let registeredComponents: ComponentMeta[] = [];
 export function registerComponents() {
   registeredComponents = [];
   
-  // 手动导入 components 目录下的所有配置
+  // 手动导入 components 目录下的所有 JSON
   // Vite 支持 import.meta.glob 动态导入
-  const modules = import.meta.glob('./components/*.config', { eager: true }) as Record<string, any>;
+  const modules = import.meta.glob('./components/*.json', { eager: true }) as Record<string, any>;
   
   for (const path in modules) {
     const mod = modules[path];
