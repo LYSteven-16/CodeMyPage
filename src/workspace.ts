@@ -1,4 +1,4 @@
-import { BeakerManager } from '@component-chemistry/atom-engine'
+import { BeakerManager } from '@LYSteven-16/atom-engine'
 import { colors } from './constants'
 import { 
   gridSettings, 
@@ -13,11 +13,7 @@ import type { Workspace, ComponentInstance } from './types'
 import { bindComponentEvents } from './events'
 import { getComponentDef } from './component-registry'
 import { renderUI } from './app'
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
-}
+import { applyAtomProps } from './atom-props'
 
 function componentToMolecule(comp: ComponentInstance): any {
   const def = getComponentDef(comp.type)
@@ -27,111 +23,32 @@ function componentToMolecule(comp: ComponentInstance): any {
   }
 
   const molecule = JSON.parse(JSON.stringify(def.molecule))
-  
   molecule.id = comp.id
   const originalZ = molecule.position?.z || 0
   molecule.position = { x: comp.x, y: comp.y, z: originalZ + (comp.zIndex || 0) }
   molecule.width = comp.width || def.defaultWidth
   molecule.height = comp.height || def.defaultHeight
-  
+
   const props = comp.props || {}
-  
+
   if (molecule.atoms && Array.isArray(molecule.atoms)) {
     molecule.atoms.forEach((atom: any) => {
-      if (atom.capability === 'text') {
-        if (props.text !== undefined) {
-          atom.text = props.text
-        }
-        if (props.fontSize !== undefined) {
-          atom.size = props.fontSize
-        }
-        if (props.textColor !== undefined) {
-          atom.color = hexToRgb(props.textColor)
-        }
-        if (props.textX !== undefined || props.textY !== undefined) {
-          atom.position = atom.position || { x: 20, y: 20 }
-          atom.position.x = props.textX ?? atom.position.x
-          atom.position.y = props.textY ?? atom.position.y
-        }
-        atom.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      }
-      
-      if (atom.capability === 'background') {
-        if (props.backgroundColor !== undefined) {
-          atom.color = hexToRgb(props.backgroundColor)
-        }
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-      
-      if (atom.capability === 'border') {
-        if (props.borderColor !== undefined) {
-          atom.color = hexToRgb(props.borderColor)
-        }
-        if (props.borderWidth !== undefined) {
-          atom.borderWidth = props.borderWidth
-        }
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-      
-      if (atom.capability === 'shadow') {
-        if (props.shadowEnabled !== undefined) {
-          atom.visible = props.shadowEnabled
-        }
-        if (props.shadowBlur !== undefined) {
-          atom.shadowBlur = props.shadowBlur
-        }
-        if (props.shadowSpread !== undefined) {
-          atom.shadowWidth = props.shadowSpread
-        }
-        if (props.shadowColor !== undefined) {
-          atom.color = hexToRgb(props.shadowColor)
-        }
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-      
+      applyAtomProps(atom, props, molecule.width, molecule.height)
       if (atom.radius !== undefined && props.borderRadius !== undefined) {
         atom.radius = props.borderRadius
       }
-      
-      if (atom.capability === 'video') {
-        if (props.videoUrl !== undefined) {
-          atom.src = props.videoUrl
-        }
-        if (props.autoplay !== undefined) {
-          atom.autoplay = props.autoplay
-        }
-        if (props.loop !== undefined) {
-          atom.loop = props.loop
-        }
-        if (props.muted !== undefined) {
-          atom.muted = props.muted
-        }
-        if (props.controls !== undefined) {
-          atom.controls = props.controls
-        }
-        if (props.borderRadius !== undefined) {
-          atom.radius = props.borderRadius
-        }
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
     })
   }
-  
+
   if (props.borderRadius !== undefined) {
     molecule.radius = props.borderRadius
   }
-  
+
   if (props.shadowEnabled !== undefined && molecule.atoms) {
     const shadowAtom = molecule.atoms.find((a: any) => a.capability === 'shadow')
-    if (shadowAtom) {
-      shadowAtom.visible = props.shadowEnabled
-    }
+    if (shadowAtom) shadowAtom.visible = props.shadowEnabled
   }
-  
+
   return molecule
 }
 

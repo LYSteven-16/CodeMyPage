@@ -2,8 +2,9 @@
 // 启动时自动扫描 src/components/*.json，注册所有可用组件
 // 新增组件只需放入 components/ 目录，无需修改任何代码
 
-import { BeakerManager } from '@component-chemistry/atom-engine';
+import { BeakerManager } from '@LYSteven-16/atom-engine';
 import type { ComponentInstance, ComponentProps, PropertiesPanel } from './types'
+import { applyAtomProps } from './atom-props'
 
 // 组件元数据（从 JSON 外层读取）
 export interface ComponentMeta {
@@ -80,100 +81,12 @@ export function renderComponentSnapshot(
       moleculeData.id = id;
     }
     
-    // 辅助函数：将 hex 颜色转换为 RGB 数组
-    const hexToRgb = (hex: string): [number, number, number] => {
-      const h = hex.replace('#', '');
-      return [
-        parseInt(h.slice(0, 2), 16),
-        parseInt(h.slice(2, 4), 16),
-        parseInt(h.slice(4, 6), 16)
-      ];
-    };
-    
     // 应用所有用户修改的属性
     if (props && Array.isArray(moleculeData.atoms)) {
       moleculeData.atoms.forEach((atom: any) => {
-        // 文本原子
-        if (atom.capability === 'text') {
-          if (props.text !== undefined) {
-            atom.text = props.text;
-          }
-          if (props.fontSize !== undefined) {
-            atom.size = props.fontSize;
-          }
-          if (props.textColor !== undefined) {
-            atom.color = hexToRgb(props.textColor);
-          }
-          if (props.textX !== undefined || props.textY !== undefined) {
-            atom.position.x = props.textX ?? atom.position?.x ?? 20;
-            atom.position.y = props.textY ?? atom.position?.y ?? 20;
-          }
-          atom.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-        }
-        
-        // 背景原子
-        if (atom.capability === 'background') {
-          if (props.backgroundColor !== undefined) {
-            atom.color = hexToRgb(props.backgroundColor);
-          }
-          atom.width = width;
-          atom.height = height;
-        }
-        
-        // 边框原子
-        if (atom.capability === 'border') {
-          if (props.borderColor !== undefined) {
-            atom.color = hexToRgb(props.borderColor);
-          }
-          if (props.borderWidth !== undefined) {
-            atom.borderWidth = props.borderWidth;
-          }
-          atom.width = width;
-          atom.height = height;
-        }
-        
-        // 阴影原子
-        if (atom.capability === 'shadow') {
-          if (props.shadowEnabled !== undefined) {
-            atom.visible = props.shadowEnabled;
-          }
-          if (props.shadowBlur !== undefined) {
-            atom.shadowBlur = props.shadowBlur;
-          }
-          if (props.shadowSpread !== undefined) {
-            atom.shadowWidth = props.shadowSpread;
-          }
-          if (props.shadowColor !== undefined) {
-            atom.color = hexToRgb(props.shadowColor);
-          }
-          atom.width = width;
-          atom.height = height;
-        }
-        
-        // 圆角
+        applyAtomProps(atom, props, width, height);
         if (atom.radius !== undefined && props.borderRadius !== undefined) {
           atom.radius = props.borderRadius;
-        }
-        
-        // 视频原子
-        if (atom.capability === 'video') {
-          if (props.videoUrl !== undefined) {
-            atom.src = props.videoUrl;
-          }
-          if (props.autoplay !== undefined) {
-            atom.autoplay = props.autoplay;
-          }
-          if (props.loop !== undefined) {
-            atom.loop = props.loop;
-          }
-          if (props.muted !== undefined) {
-            atom.muted = props.muted;
-          }
-          if (props.controls !== undefined) {
-            atom.controls = props.controls;
-          }
-          atom.width = width;
-          atom.height = height;
         }
       });
     }
@@ -250,7 +163,18 @@ export function createComponentInstance(
 ): ComponentInstance | null {
   const def = getComponentDef(type);
   if (!def) return null;
-  
+
+  const defaultProps: Record<string, any> = {};
+  if (def.propertiesPanel?.sections) {
+    def.propertiesPanel.sections.forEach(section => {
+      section.controls.forEach(control => {
+        if (control.default !== undefined) {
+          defaultProps[control.id] = control.default;
+        }
+      });
+    });
+  }
+
   return {
     id: `${workspaceId}-component-${Date.now()}`,
     type,
@@ -258,8 +182,9 @@ export function createComponentInstance(
     y,
     width: def.defaultWidth,
     height: def.defaultHeight,
+    zIndex: 0,
     selected: false,
-    props: {},
+    props: defaultProps,
     moleculeData: JSON.parse(JSON.stringify(def.molecule))
   };
 }

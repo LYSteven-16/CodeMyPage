@@ -48,6 +48,13 @@ import {
 let workspaceRenderQueued = false
 
 let draggedPanel: HTMLElement | null = null
+
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [0, 0, 0]
+}
 let panelDragOffset = { x: 0, y: 0 }
 
 function scheduleWorkspaceRender() {
@@ -729,6 +736,45 @@ function bindPropertyEditorEvents() {
     })
     setComponents(updated)
     renderUI()
+  })
+
+  document.getElementById('prop-blackboard-style')?.addEventListener('change', (e) => {
+    selected.props.blackboardStyle = (e.target as HTMLInputElement).checked
+    renderWorkspace()
+  })
+
+  document.getElementById('prop-bg-color')?.addEventListener('input', (e) => {
+    const hex = (e.target as HTMLInputElement).value
+    selected.props.backgroundColor = hex
+    const textInput = document.getElementById('prop-bg-color-text') as HTMLInputElement
+    if (textInput) textInput.value = hex
+    renderWorkspace()
+  })
+
+  document.getElementById('prop-bg-color-text')?.addEventListener('change', (e) => {
+    selected.props.backgroundColor = (e.target as HTMLInputElement).value
+    renderWorkspace()
+  })
+
+  document.getElementById('prop-stroke-color')?.addEventListener('input', (e) => {
+    const hex = (e.target as HTMLInputElement).value
+    selected.props.strokeColor = hex
+    renderWorkspace()
+  })
+
+  document.getElementById('prop-stroke-width')?.addEventListener('input', (e) => {
+    selected.props.strokeWidth = +(e.target as HTMLInputElement).value
+    renderWorkspace()
+  })
+
+  document.getElementById('prop-show-toolbar')?.addEventListener('change', (e) => {
+    selected.props.showToolbar = (e.target as HTMLInputElement).checked
+    renderWorkspace()
+  })
+
+  document.getElementById('prop-resizable')?.addEventListener('change', (e) => {
+    selected.props.resizable = (e.target as HTMLInputElement).checked
+    renderWorkspace()
   })
 }
 

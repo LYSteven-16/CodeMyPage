@@ -1,7 +1,8 @@
 import { registeredComponents, getComponentDef } from './component-registry'
 import type { ComponentInstance } from './types'
 import type { Workspace } from './types'
-import atomEngineSource from '@component-chemistry/atom-engine?raw'
+import { applyAtomProps } from './atom-props'
+import atomEngineSource from '@LYSteven-16/atom-engine?raw'
 
 console.log('[Export] atomEngineSource 长度:', atomEngineSource?.length ?? 'undefined')
 
@@ -16,11 +17,6 @@ export interface ExportData {
   }
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
-}
-
 function componentToMolecule(comp: ComponentInstance): any {
   const def = getComponentDef(comp.type)
   if (!def) {
@@ -30,7 +26,6 @@ function componentToMolecule(comp: ComponentInstance): any {
   console.log(`[Export] 找到组件定义: ${comp.type}, molecule:`, JSON.stringify(def.molecule).substring(0, 200))
 
   const molecule = JSON.parse(JSON.stringify(def.molecule))
-
   molecule.id = comp.id
   molecule.position = { x: comp.x, y: comp.y, z: 1 }
   molecule.width = comp.width || def.defaultWidth
@@ -40,40 +35,7 @@ function componentToMolecule(comp: ComponentInstance): any {
 
   if (molecule.atoms && Array.isArray(molecule.atoms)) {
     molecule.atoms.forEach((atom: any) => {
-      if (atom.capability === 'text') {
-        if (props.text !== undefined) atom.text = props.text
-        if (props.fontSize !== undefined) atom.size = props.fontSize
-        if (props.textColor !== undefined) atom.color = hexToRgb(props.textColor)
-        if (props.textX !== undefined || props.textY !== undefined) {
-          atom.position = atom.position || { x: 20, y: 20 }
-          atom.position.x = props.textX ?? atom.position.x
-          atom.position.y = props.textY ?? atom.position.y
-        }
-        atom.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      }
-
-      if (atom.capability === 'background') {
-        if (props.backgroundColor !== undefined) atom.color = hexToRgb(props.backgroundColor)
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-
-      if (atom.capability === 'border') {
-        if (props.borderColor !== undefined) atom.color = hexToRgb(props.borderColor)
-        if (props.borderWidth !== undefined) atom.borderWidth = props.borderWidth
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-
-      if (atom.capability === 'shadow') {
-        if (props.shadowEnabled !== undefined) atom.visible = props.shadowEnabled
-        if (props.shadowBlur !== undefined) atom.shadowBlur = props.shadowBlur
-        if (props.shadowSpread !== undefined) atom.shadowWidth = props.shadowSpread
-        if (props.shadowColor !== undefined) atom.color = hexToRgb(props.shadowColor)
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-
+      applyAtomProps(atom, props, molecule.width, molecule.height)
       if (atom.radius !== undefined && props.borderRadius !== undefined) {
         atom.radius = props.borderRadius
       }

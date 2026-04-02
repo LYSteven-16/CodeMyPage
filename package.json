@@ -6,7 +6,7 @@
   "homepage": "https://LYSteven-16.github.io/CodeMyPage",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp node_modules/@component-chemistry/atom-engine/dist/BeakerManager.mjs dist/atom-engine.js",
+    "build": "vite build && node -e \"require('fs').copyFileSync('node_modules/@LYSteven-16/atom-engine/dist/BeakerManager.mjs', 'dist/atom-engine.js')\"",
     "build:all": "npm run build",
     "preview": "vite preview"
   },
@@ -18,6 +18,6 @@
     "vite": "^8.0.0"
   },
   "dependencies": {
-    "@component-chemistry/atom-engine": "github:LYSteven-16/atom-engine"
+    "@LYSteven-16/atom-engine": "github:LYSteven-16/atom-engine"
   }
 }

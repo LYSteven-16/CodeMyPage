@@ -1,8 +1,10 @@
 import 'virtual:uno.css'
-import { BeakerManager } from '@component-chemistry/atom-engine'
+import { BeakerManager } from '@LYSteven-16/atom-engine'
 import { registerComponents, getComponentDef } from './component-registry'
+import { applyAtomProps } from './atom-props'
 
-// ==================== 类型定义 ====================
+const CANVAS_WIDTH = 1000
+
 interface EditorComponent {
   id: string
   type: string
@@ -40,16 +42,6 @@ interface Workspace {
   shadowColor?: string
 }
 
-// ==================== 常量 ====================
-const CANVAS_WIDTH = 1000
-
-// ==================== 工具函数 ====================
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
-}
-
-// ==================== 分子配置（完整功能，包括互动） ====================
 function componentToMolecule(comp: EditorComponent): any {
   const def = getComponentDef(comp.type)
   if (!def) {
@@ -57,131 +49,35 @@ function componentToMolecule(comp: EditorComponent): any {
     return null
   }
 
-  // 克隆分子数据，避免污染原始定义
   const molecule = JSON.parse(JSON.stringify(def.molecule))
-  
-  // 设置位置和尺寸
   molecule.id = comp.id
   const originalZ = molecule.position?.z || 0
   molecule.position = { x: comp.x, y: comp.y, z: originalZ + (comp.zIndex || 0) }
   molecule.width = comp.width || def.defaultWidth
   molecule.height = comp.height || def.defaultHeight
-  
-  // 应用用户修改的属性
+
   const props = comp.props || {}
-  
-  // 处理每个原子
+
   if (molecule.atoms && Array.isArray(molecule.atoms)) {
     molecule.atoms.forEach((atom: any) => {
-      // 文本原子
-      if (atom.capability === 'text') {
-        if (props.text !== undefined) {
-          atom.text = props.text
-        }
-        if (props.fontSize !== undefined) {
-          atom.size = props.fontSize
-        }
-        if (props.textColor !== undefined) {
-          atom.color = hexToRgb(props.textColor)
-        }
-        if (props.textX !== undefined || props.textY !== undefined) {
-          atom.position = atom.position || { x: 20, y: 20 }
-          atom.position.x = props.textX ?? atom.position.x
-          atom.position.y = props.textY ?? atom.position.y
-        }
-        // 设置字体家族，确保与编辑器一致
-        atom.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-      }
-      
-      // 背景原子
-      if (atom.capability === 'background') {
-        if (props.backgroundColor !== undefined) {
-          atom.color = hexToRgb(props.backgroundColor)
-        }
-        // 更新尺寸
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-      
-      // 边框原子
-      if (atom.capability === 'border') {
-        if (props.borderColor !== undefined) {
-          atom.color = hexToRgb(props.borderColor)
-        }
-        if (props.borderWidth !== undefined) {
-          atom.borderWidth = props.borderWidth
-        }
-        // 更新尺寸
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-      
-      // 阴影原子
-      if (atom.capability === 'shadow') {
-        if (props.shadowEnabled !== undefined) {
-          atom.visible = props.shadowEnabled
-        }
-        if (props.shadowBlur !== undefined) {
-          atom.shadowBlur = props.shadowBlur
-        }
-        if (props.shadowSpread !== undefined) {
-          atom.shadowWidth = props.shadowSpread
-        }
-        if (props.shadowColor !== undefined) {
-          const rgb = hexToRgb(props.shadowColor)
-          atom.color = rgb
-        }
-        // 更新尺寸
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
-      
-      // 视频原子
-      if (atom.capability === 'video') {
-        if (props.videoUrl !== undefined) {
-          atom.src = props.videoUrl
-        }
-        if (props.autoplay !== undefined) {
-          atom.autoplay = props.autoplay
-        }
-        if (props.loop !== undefined) {
-          atom.loop = props.loop
-        }
-        if (props.muted !== undefined) {
-          atom.muted = props.muted
-        }
-        if (props.controls !== undefined) {
-          atom.controls = props.controls
-        }
-        if (props.borderRadius !== undefined) {
-          atom.radius = props.borderRadius
-        }
-        atom.width = molecule.width
-        atom.height = molecule.height
-      }
+      applyAtomProps(atom, props, molecule.width, molecule.height)
     })
   }
-  
-  // 处理阴影显示/隐藏
+
   if (props.shadowEnabled !== undefined && molecule.atoms) {
     const shadowAtom = molecule.atoms.find((a: any) => a.capability === 'shadow')
-    if (shadowAtom) {
-      shadowAtom.visible = props.shadowEnabled
-    }
+    if (shadowAtom) shadowAtom.visible = props.shadowEnabled
   }
-  
-  // 处理圆角
+
   if (props.borderRadius !== undefined) {
     molecule.radius = props.borderRadius
     if (molecule.atoms) {
       molecule.atoms.forEach((atom: any) => {
-        if (atom.radius !== undefined) {
-          atom.radius = props.borderRadius
-        }
+        if (atom.radius !== undefined) atom.radius = props.borderRadius
       })
     }
   }
-  
+
   return molecule
 }
 

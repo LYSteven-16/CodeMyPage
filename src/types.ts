@@ -48,6 +48,67 @@ export interface ComponentProps {
   loop?: boolean
   muted?: boolean
   controls?: boolean
+  strokeColor?: string
+  strokeWidth?: number
+  blackboardStyle?: boolean
+  showToolbar?: boolean
+  resizable?: boolean
+  opacity?: number
+  audioUrl?: string
+  imageUrl?: string
+  imageAlt?: string
+  imageFitMode?: 'scroll' | 'crop' | 'stretch'
+  code?: string
+  codeLanguage?: string
+  codeBackgroundColor?: string
+  icon?: string
+  iconSvg?: string
+  iconSize?: number
+  iconColor?: string
+  checkboxChecked?: boolean
+  checkboxLabel?: string
+  checkboxSize?: number
+  checkboxColor?: string
+  inputValue?: string
+  inputPlaceholder?: string
+  inputSize?: number
+  inputColor?: string
+  inputWidth?: number
+  inputHeight?: number
+  selectValue?: string
+  selectOptions?: { label: string; value: string }[]
+  textareaValue?: string
+  textareaPlaceholder?: string
+  textareaSize?: number
+  textareaColor?: string
+  textareaRows?: number
+  editableText?: string
+  editableTextSize?: number
+  editableTextColor?: string
+  editableTextEditable?: boolean
+  flexDirection?: 'row' | 'column'
+  flexGap?: number
+  flexAlign?: 'start' | 'center' | 'end' | 'stretch'
+  flexJustify?: 'start' | 'center' | 'end' | 'space-between' | 'space-around'
+  flexWrap?: boolean
+  scrollDirection?: 'vertical' | 'horizontal' | 'both'
+  collapseExpandedValue?: number
+  collapseCollapsedValue?: number
+  opacityValue?: number
+  opacityDefaultValue?: number
+  opacityDuration?: number
+  scaleValue?: number
+  scaleDefaultValue?: number
+  scaleDuration?: number
+  rotateValue?: number
+  rotateDefaultValue?: number
+  rotateDuration?: number
+  widthCollapsedValue?: number
+  widthTrigger?: 'hover' | 'click' | 'doubleclick'
+  widthDuration?: number
+  heightCollapsedValue?: number
+  heightTrigger?: 'hover' | 'click' | 'doubleclick'
+  heightDuration?: number
 }
 
 export interface ComponentInstance {

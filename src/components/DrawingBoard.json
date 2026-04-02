@@ -4,9 +4,86 @@
   "icon": "🎨",
   "defaultWidth": 500,
   "defaultHeight": 400,
+  "propertiesPanel": {
+    "sections": [
+      {
+        "id": "canvas-style-section",
+        "controls": [
+          {
+            "id": "blackboardStyle",
+            "domId": "prop-blackboard-style",
+            "type": "checkbox",
+            "label": "黑板风格",
+            "default": true,
+            "sectionHeader": true
+          }
+        ]
+      },
+      {
+        "id": "stroke-section",
+        "controls": [
+          {
+            "id": "strokeColor",
+            "domId": "prop-stroke-color",
+            "type": "color",
+            "label": "默认画笔颜色",
+            "default": "#000000",
+            "compact": true
+          },
+          {
+            "id": "strokeWidth",
+            "domId": "prop-stroke-width",
+            "type": "number",
+            "label": "默认画笔粗细",
+            "default": 2,
+            "layout": "half",
+            "smallLabel": true
+          }
+        ]
+      },
+      {
+        "id": "toolbar-section",
+        "controls": [
+          {
+            "id": "showToolbar",
+            "domId": "prop-show-toolbar",
+            "type": "checkbox",
+            "label": "显示工具栏",
+            "default": true,
+            "sectionHeader": true
+          },
+          {
+            "id": "resizable",
+            "domId": "prop-resizable",
+            "type": "checkbox",
+            "label": "允许调整大小",
+            "default": false
+          }
+        ]
+      }
+    ]
+  },
   "molecule": {
     "id": "",
     "position": { "x": 0, "y": 0 },
-    "atoms": []
+    "atoms": [
+      {
+        "id": "",
+        "capability": "canvas",
+        "width": 480,
+        "height": 360,
+        "position": { "x": 10, "y": 20, "z": 0 },
+        "strokeColor": [0, 0, 0],
+        "strokeWidth": 2,
+        "blackboardStyle": true,
+        "defaultWidths": [1, 2, 4, 6, 8, 12, 16, 20],
+        "showToolbar": true,
+        "resizable": false,
+        "minWidth": 350,
+        "minHeight": 150
+      }
+    ],
+    "width": 500,
+    "height": 400
   }
 }
