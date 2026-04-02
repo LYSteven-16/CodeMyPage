@@ -1,0 +1,12 @@
+{
+  "type": "fill-blank",
+  "name": "填空题",
+  "icon": "✏️",
+  "defaultWidth": 300,
+  "defaultHeight": 100,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

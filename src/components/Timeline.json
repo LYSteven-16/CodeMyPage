@@ -1,0 +1,12 @@
+{
+  "type": "timeline",
+  "name": "时间线",
+  "icon": "⏱️",
+  "defaultWidth": 400,
+  "defaultHeight": 300,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

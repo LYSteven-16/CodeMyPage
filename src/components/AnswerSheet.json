@@ -1,0 +1,12 @@
+{
+  "type": "answer-sheet",
+  "name": "答题卡",
+  "icon": "✅",
+  "defaultWidth": 400,
+  "defaultHeight": 500,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

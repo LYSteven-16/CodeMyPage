@@ -1,0 +1,12 @@
+{
+  "type": "progress-bar",
+  "name": "进度条",
+  "icon": "📊",
+  "defaultWidth": 300,
+  "defaultHeight": 30,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

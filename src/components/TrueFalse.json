@@ -1,0 +1,12 @@
+{
+  "type": "true-false",
+  "name": "判断题",
+  "icon": "✅",
+  "defaultWidth": 300,
+  "defaultHeight": 150,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

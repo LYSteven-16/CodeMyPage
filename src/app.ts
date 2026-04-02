@@ -34,6 +34,171 @@ import {
   getComponentMenuItems,
   getComponentDef
 } from './component-registry'
+import type { ComponentDefinition, PropertiesPanelControl } from './types'
+
+function renderControl(control: PropertiesPanelControl, props: Record<string, any>): string {
+  const value = props[control.id] ?? control.default
+  const domId = control.domId || `prop-${control.id}`
+  
+  switch (control.type) {
+    case 'text':
+      return `<div style="margin-bottom:12px;">
+        <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">${control.label}</label>
+        <input type="text" id="${domId}" value="${value || ''}" class="inp" style="width:100%;" placeholder="${control.placeholder || ''}">
+      </div>`
+    
+    case 'number':
+      return `<div>
+        <label style="font-size:${control.smallLabel ? 10 : 11}px;color:${colors.textSecondary};display:block;margin-bottom:4px;">${control.label}</label>
+        <input type="number" id="${domId}" value="${value}" class="inp" style="width:100%;">
+      </div>`
+    
+    case 'range':
+      const rangeValue = value ?? control.default ?? 0
+      const displayValue = control.showValue ? ` (${rangeValue}${control.valueSuffix || ''})` : ''
+      return `<div style="margin-bottom:12px;">
+        <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">${control.label}${displayValue}</label>
+        <input type="range" id="${domId}" min="${control.min ?? 0}" max="${control.max ?? 100}" value="${rangeValue}" class="inp" style="width:100%;accent-color:${colors.blue};">
+      </div>`
+    
+    case 'color':
+      if (control.showTextInput) {
+        return `<div style="margin-bottom:12px;">
+          <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">${control.label}</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="${domId}" value="${value || control.default}" style="width:32px;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;padding:0;">
+            <input type="text" id="${domId}-text" value="${value || control.default}" class="inp" style="flex:1;">
+          </div>
+        </div>`
+      }
+      if (control.compact) {
+        return `<div>
+          <label style="font-size:${control.smallLabel ? 10 : 11}px;color:${colors.textSecondary};display:block;margin-bottom:4px;">${control.label}</label>
+          <input type="color" id="${domId}" value="${value || control.default}" style="width:100%;height:28px;border:1px solid ${colors.divider};border-radius:6px;cursor:pointer;padding:0;">
+        </div>`
+      }
+      return `<div style="margin-bottom:12px;">
+        <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">${control.label}</label>
+        <input type="color" id="${domId}" value="${value || control.default}" style="width:100%;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;padding:0;">
+      </div>`
+    
+    case 'checkbox':
+      const checked = value !== false ? 'checked' : ''
+      if (control.sectionHeader) {
+        return `<div style="margin-bottom:12px;border-top:1px solid ${colors.divider};padding-top:12px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;margin-bottom:8px;">
+            <input type="checkbox" id="${domId}" ${checked} style="accent-color:${colors.blue};">
+            ${control.label}
+          </label>`
+      }
+      return `<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;">
+        <input type="checkbox" id="${domId}" ${checked} style="accent-color:${colors.blue};">
+        ${control.label}
+      </label>`
+    
+    default:
+      return ''
+  }
+}
+
+function renderPropertiesPanel(def: ComponentDefinition, selectedComponent: any): string {
+  const props = selectedComponent.props || {}
+  const panel = def.propertiesPanel
+  
+  if (!panel || !panel.sections) {
+    return `<div style="padding:16px;">
+      <div style="font-size:13px;color:${colors.textSecondary};">此组件暂无可配置属性</div>
+    </div>`
+  }
+  
+  let html = '<div style="padding:16px;max-height:400px;overflow-y:auto;">'
+  
+  panel.sections.forEach((section, sectionIndex) => {
+    const halfControls: PropertiesPanelControl[] = []
+    const fullControls: PropertiesPanelControl[] = []
+    
+    section.controls.forEach(control => {
+      if (control.layout === 'half') {
+        halfControls.push(control)
+      } else {
+        fullControls.push(control)
+      }
+    })
+    
+    for (let i = 0; i < halfControls.length; i += 2) {
+      const c1 = halfControls[i]
+      const c2 = halfControls[i + 1]
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        ${renderControl(c1, props)}
+        ${c2 ? renderControl(c2, props) : '<div></div>'}
+      </div>`
+    }
+    
+    fullControls.forEach(control => {
+      const controlHtml = renderControl(control, props)
+      if (control.type === 'checkbox' && control.sectionHeader) {
+        html += controlHtml
+      } else if (control.type === 'checkbox' && !control.sectionHeader && sectionIndex > 0) {
+        html += controlHtml
+      } else {
+        html += controlHtml
+      }
+    })
+    
+    const lastControl = section.controls[section.controls.length - 1]
+    if (lastControl && lastControl.type === 'checkbox' && lastControl.sectionHeader) {
+      html += '</div>'
+    }
+  })
+  
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid ${colors.divider};padding-top:12px;">
+    <div>
+      <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">宽度</label>
+      <input type="number" id="prop-width" value="${selectedComponent.width || def.defaultWidth}" class="inp" style="width:100%;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">高度</label>
+      <input type="number" id="prop-height" value="${selectedComponent.height || def.defaultHeight}" class="inp" style="width:100%;">
+    </div>
+  </div>
+  <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-size:11px;color:${colors.textSecondary};">
+      位置: (${Math.round(selectedComponent.x)}, ${Math.round(selectedComponent.y)})
+    </div>
+    <button id="btn-delete-component" style="font-size:12px;color:${colors.red};background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;">删除组件</button>
+  </div>
+  <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ${colors.divider};padding-top:12px;">
+    <div style="font-size:11px;color:${colors.textSecondary};">
+      层级: ${selectedComponent.zIndex || 0}
+    </div>
+    <div style="display:flex;gap:4px;">
+      <button id="btn-zindex-up" style="font-size:11px;color:${colors.text};background:${colors.bg};border:1px solid ${colors.divider};cursor:pointer;padding:4px 8px;border-radius:4px;">上移一层</button>
+      <button id="btn-zindex-down" style="font-size:11px;color:${colors.text};background:${colors.bg};border:1px solid ${colors.divider};cursor:pointer;padding:4px 8px;border-radius:4px;">下移一层</button>
+    </div>
+  </div>
+  <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+    <div></div>
+    <div style="display:flex;gap:4px;">
+      ${(() => {
+        const wsComponents = components.filter(c => c.id.startsWith(selectedComponent.id.split('-component-')[0] + '-component-'))
+        const maxZ = Math.max(...wsComponents.map(c => c.zIndex || 0))
+        const minZ = Math.min(...wsComponents.map(c => c.zIndex || 0))
+        const currentZ = selectedComponent.zIndex || 0
+        const isTop = currentZ >= maxZ
+        const isBottom = currentZ <= minZ
+        const disabledStyle = 'opacity:0.4;cursor:not-allowed;'
+        const enabledStyle = 'cursor:pointer;'
+        return `
+          <button id="btn-zindex-top" style="font-size:11px;color:${colors.text};background:${colors.bg};border:1px solid ${colors.divider};padding:4px 8px;border-radius:4px;${isTop ? disabledStyle : enabledStyle}" ${isTop ? 'disabled' : ''}>顶层</button>
+          <button id="btn-zindex-bottom" style="font-size:11px;color:${colors.text};background:${colors.bg};border:1px solid ${colors.divider};padding:4px 8px;border-radius:4px;${isBottom ? disabledStyle : enabledStyle}" ${isBottom ? 'disabled' : ''}>底层</button>
+        `
+      })()}
+    </div>
+  </div>
+</div>`
+  
+  return html
+}
 
 function selectWorkspace(id: string) {
   setCurrentWorkspaceId(id)
@@ -260,93 +425,7 @@ export function renderUI() {
   if (selectedComponent && showPropertyEditor) {
     const def = getComponentDef(selectedComponent.type)
     if (def) {
-      const props = selectedComponent.props || {}
-      const panelContent = `
-        <div style="padding:16px;max-height:400px;overflow-y:auto;">
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本内容</label>
-            <input type="text" id="prop-text" value="${props.text || ''}" class="inp" style="width:100%;" placeholder="输入文本...">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-            <div>
-              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本 X</label>
-              <input type="number" id="prop-text-x" value="${props.textX ?? 20}" class="inp" style="width:100%;">
-            </div>
-            <div>
-              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文本 Y</label>
-              <input type="number" id="prop-text-y" value="${props.textY ?? 20}" class="inp" style="width:100%;">
-            </div>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">字号 (${props.fontSize || 16}px)</label>
-            <input type="range" id="prop-font-size" min="10" max="72" value="${props.fontSize || 16}" class="inp" style="width:100%;accent-color:${colors.blue};">
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">文字颜色</label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input type="color" id="prop-text-color" value="${props.textColor || '#1d1d1f'}" style="width:32px;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;padding:0;">
-              <input type="text" id="prop-text-color-text" value="${props.textColor || '#1d1d1f'}" class="inp" style="flex:1;">
-            </div>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">背景颜色</label>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input type="color" id="prop-bg" value="${props.backgroundColor || '#ffffff'}" style="width:32px;height:32px;border:1px solid ${colors.divider};border-radius:8px;cursor:pointer;padding:0;">
-              <input type="text" id="prop-bg-text" value="${props.backgroundColor || '#ffffff'}" class="inp" style="flex:1;">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-            <div>
-              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">边框颜色</label>
-              <input type="color" id="prop-border-color" value="${props.borderColor || '#e5e5e5'}" style="width:100%;height:28px;border:1px solid ${colors.divider};border-radius:6px;cursor:pointer;padding:0;">
-            </div>
-            <div>
-              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">边框粗细</label>
-              <input type="number" id="prop-border-width" value="${props.borderWidth ?? 1}" class="inp" style="width:100%;">
-            </div>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">圆角 (${props.borderRadius || 0}px)</label>
-            <input type="range" id="prop-radius" min="0" max="100" value="${props.borderRadius || 0}" class="inp" style="width:100%;accent-color:${colors.blue};">
-          </div>
-          <div style="margin-bottom:12px;border-top:1px solid ${colors.divider};padding-top:12px;">
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:${colors.textSecondary};cursor:pointer;margin-bottom:8px;">
-              <input type="checkbox" id="prop-shadow" ${props.shadowEnabled !== false ? 'checked' : ''} style="accent-color:${colors.blue};">
-              启用阴影
-            </label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-              <div>
-                <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">模糊</label>
-                <input type="number" id="prop-shadow-blur" value="${props.shadowBlur ?? 20}" class="inp" style="width:100%;">
-              </div>
-              <div>
-                <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">扩散</label>
-                <input type="number" id="prop-shadow-spread" value="${props.shadowSpread ?? 0}" class="inp" style="width:100%;">
-              </div>
-            </div>
-            <div>
-              <label style="font-size:10px;color:${colors.textSecondary};display:block;margin-bottom:4px;">阴影颜色</label>
-              <input type="color" id="prop-shadow-color" value="${props.shadowColor || 'rgba(0,0,0,0.1)'}" style="width:100%;height:28px;border:1px solid ${colors.divider};border-radius:6px;cursor:pointer;padding:0;">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid ${colors.divider};padding-top:12px;">
-            <div>
-              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">宽度</label>
-              <input type="number" id="prop-width" value="${selectedComponent.width || def.defaultWidth}" class="inp" style="width:100%;">
-            </div>
-            <div>
-              <label style="font-size:11px;color:${colors.textSecondary};display:block;margin-bottom:4px;">高度</label>
-              <input type="number" id="prop-height" value="${selectedComponent.height || def.defaultHeight}" class="inp" style="width:100%;">
-            </div>
-          </div>
-          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:11px;color:${colors.textSecondary};">
-              位置: (${Math.round(selectedComponent.x)}, ${Math.round(selectedComponent.y)})
-            </div>
-            <button id="btn-delete-component" style="font-size:12px;color:${colors.red};background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;">删除组件</button>
-          </div>
-        </div>
-      `
+      const panelContent = renderPropertiesPanel(def as ComponentDefinition, selectedComponent)
       document.body.insertAdjacentHTML('beforeend', renderDropdown(`${def.name} 属性`, panelContent, 'panel-properties'))
     }
   }

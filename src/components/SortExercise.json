@@ -1,0 +1,12 @@
+{
+  "type": "sort-exercise",
+  "name": "排序练习",
+  "icon": "🔢",
+  "defaultWidth": 400,
+  "defaultHeight": 300,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

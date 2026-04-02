@@ -1,0 +1,12 @@
+{
+  "type": "answer-explanation",
+  "name": "答案解析",
+  "icon": "💡",
+  "defaultWidth": 400,
+  "defaultHeight": 200,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

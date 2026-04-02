@@ -1,0 +1,12 @@
+{
+  "type": "multiple-choice",
+  "name": "选择题",
+  "icon": "☑️",
+  "defaultWidth": 400,
+  "defaultHeight": 250,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

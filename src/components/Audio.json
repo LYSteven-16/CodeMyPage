@@ -1,0 +1,12 @@
+{
+  "type": "audio",
+  "name": "音频",
+  "icon": "🔊",
+  "defaultWidth": 300,
+  "defaultHeight": 80,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

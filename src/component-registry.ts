@@ -3,7 +3,7 @@
 // 新增组件只需放入 components/ 目录，无需修改任何代码
 
 import { BeakerManager } from '@component-chemistry/atom-engine';
-import type { ComponentInstance, ComponentProps } from './types'
+import type { ComponentInstance, ComponentProps, PropertiesPanel } from './types'
 
 // 组件元数据（从 JSON 外层读取）
 export interface ComponentMeta {
@@ -13,6 +13,7 @@ export interface ComponentMeta {
   defaultWidth: number
   defaultHeight: number
   molecule: any
+  propertiesPanel?: PropertiesPanel
   filePath: string
 }
 
@@ -37,6 +38,7 @@ export function registerComponents() {
         defaultWidth: mod.defaultWidth || 150,
         defaultHeight: mod.defaultHeight || 100,
         molecule: mod.molecule,
+        propertiesPanel: mod.propertiesPanel,
         filePath: path
       });
     }
@@ -151,6 +153,27 @@ export function renderComponentSnapshot(
         // 圆角
         if (atom.radius !== undefined && props.borderRadius !== undefined) {
           atom.radius = props.borderRadius;
+        }
+        
+        // 视频原子
+        if (atom.capability === 'video') {
+          if (props.videoUrl !== undefined) {
+            atom.src = props.videoUrl;
+          }
+          if (props.autoplay !== undefined) {
+            atom.autoplay = props.autoplay;
+          }
+          if (props.loop !== undefined) {
+            atom.loop = props.loop;
+          }
+          if (props.muted !== undefined) {
+            atom.muted = props.muted;
+          }
+          if (props.controls !== undefined) {
+            atom.controls = props.controls;
+          }
+          atom.width = width;
+          atom.height = height;
         }
       });
     }

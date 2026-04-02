@@ -1,0 +1,12 @@
+{
+  "type": "score-display",
+  "name": "分数展示",
+  "icon": "🏆",
+  "defaultWidth": 300,
+  "defaultHeight": 200,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

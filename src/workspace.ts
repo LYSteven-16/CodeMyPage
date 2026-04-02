@@ -29,7 +29,8 @@ function componentToMolecule(comp: ComponentInstance): any {
   const molecule = JSON.parse(JSON.stringify(def.molecule))
   
   molecule.id = comp.id
-  molecule.position = { x: comp.x, y: comp.y, z: 1 }
+  const originalZ = molecule.position?.z || 0
+  molecule.position = { x: comp.x, y: comp.y, z: originalZ + (comp.zIndex || 0) }
   molecule.width = comp.width || def.defaultWidth
   molecule.height = comp.height || def.defaultHeight
   
@@ -94,6 +95,29 @@ function componentToMolecule(comp: ComponentInstance): any {
       if (atom.radius !== undefined && props.borderRadius !== undefined) {
         atom.radius = props.borderRadius
       }
+      
+      if (atom.capability === 'video') {
+        if (props.videoUrl !== undefined) {
+          atom.src = props.videoUrl
+        }
+        if (props.autoplay !== undefined) {
+          atom.autoplay = props.autoplay
+        }
+        if (props.loop !== undefined) {
+          atom.loop = props.loop
+        }
+        if (props.muted !== undefined) {
+          atom.muted = props.muted
+        }
+        if (props.controls !== undefined) {
+          atom.controls = props.controls
+        }
+        if (props.borderRadius !== undefined) {
+          atom.radius = props.borderRadius
+        }
+        atom.width = molecule.width
+        atom.height = molecule.height
+      }
     })
   }
   
@@ -124,7 +148,7 @@ export function renderWorkspace() {
   })
   
   workspaces.forEach(workspace => {
-    const wsComponents = components.filter(c => c.id.startsWith(workspace.id + '-'))
+    const wsComponents = components.filter(c => c.id.startsWith(workspace.id + '-')).sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
     const molecules = wsComponents.map(c => componentToMolecule(c)).filter(Boolean)
     
     if (molecules.length > 0) {
@@ -156,8 +180,13 @@ export function renderWorkspace() {
         // 为组件元素设置 data-id 属性
         if (i < molecules.length && molecules[i] && molecules[i].id) {
           const componentId = molecules[i].id
+          const component = components.find(c => c.id === componentId)
           htmlChild.dataset.id = componentId
           console.log(`[Workspace] Set data-id="${componentId}" on child ${i}`)
+          
+          if (component && component.zIndex !== undefined) {
+            htmlChild.style.zIndex = String(component.zIndex)
+          }
           
           // 如果是选中的组件，应用高亮样式
           if (componentId === selectedComponentId) {
@@ -204,6 +233,7 @@ export function renderWorkspace() {
           y,
           width: componentDef.defaultWidth,
           height: componentDef.defaultHeight,
+          zIndex: 0,
           selected: false,
           props: {
             text: componentDef.molecule?.atoms?.find((atom: any) => atom?.capability === 'text')?.text || ''
@@ -262,6 +292,7 @@ export function renderWorkspace() {
           y,
           width: componentDef.defaultWidth,
           height: componentDef.defaultHeight,
+          zIndex: 0,
           selected: false,
           props: {
             text: componentDef.molecule?.atoms?.find((atom: any) => atom?.capability === 'text')?.text || ''

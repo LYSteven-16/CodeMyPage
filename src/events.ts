@@ -47,6 +47,9 @@ import {
 
 let workspaceRenderQueued = false
 
+let draggedPanel: HTMLElement | null = null
+let panelDragOffset = { x: 0, y: 0 }
+
 function scheduleWorkspaceRender() {
   if (workspaceRenderQueued) return
   workspaceRenderQueued = true
@@ -386,11 +389,7 @@ export function bindEvents() {
     }
   })
 
-    // 面板拖拽功能
-  let draggedPanel: HTMLElement | null = null
-  let panelDragOffset = { x: 0, y: 0 }
-  
-  document.querySelectorAll('.draggable-panel').forEach(panel => {
+    document.querySelectorAll('.draggable-panel').forEach(panel => {
     const panelEl = panel as HTMLElement
     const header = panelEl.querySelector('.panel-header') as HTMLElement
     
@@ -608,10 +607,126 @@ function bindPropertyEditorEvents() {
     renderWorkspace()
   })
   
+  document.getElementById('prop-video-url')?.addEventListener('input', (e) => {
+    const url = (e.target as HTMLInputElement).value
+    selected.props.videoUrl = url
+    
+    if (url) {
+      const video = document.createElement('video')
+      video.src = url
+      video.muted = true
+      video.preload = 'metadata'
+      
+      video.onloadedmetadata = () => {
+        const aspectRatio = video.videoWidth / video.videoHeight
+        if (aspectRatio > 0 && isFinite(aspectRatio)) {
+          const baseHeight = 300
+          const newWidth = Math.round(baseHeight * aspectRatio)
+          selected.width = newWidth
+          selected.height = baseHeight
+          
+          const idx = components.findIndex(c => c.id === selectedComponentId)
+          if (idx !== -1) {
+            components[idx] = { ...selected }
+            setComponents([...components])
+          }
+        }
+        renderWorkspace()
+      }
+      
+      video.onerror = () => {
+        console.warn('[Video] 无法加载视频元数据')
+        renderWorkspace()
+      }
+    } else {
+      renderWorkspace()
+    }
+  })
+  
+  document.getElementById('prop-autoplay')?.addEventListener('change', (e) => {
+    selected.props.autoplay = (e.target as HTMLInputElement).checked
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-loop')?.addEventListener('change', (e) => {
+    selected.props.loop = (e.target as HTMLInputElement).checked
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-muted')?.addEventListener('change', (e) => {
+    selected.props.muted = (e.target as HTMLInputElement).checked
+    renderWorkspace()
+  })
+  
+  document.getElementById('prop-controls')?.addEventListener('change', (e) => {
+    selected.props.controls = (e.target as HTMLInputElement).checked
+    renderWorkspace()
+  })
+  
   document.getElementById('btn-delete-component')?.addEventListener('click', () => {
     setComponents(components.filter(c => c.id !== selectedComponentId))
     setSelectedComponentId(null)
     setShowPropertyEditor(false)
+    renderUI()
+  })
+  
+  document.getElementById('btn-zindex-up')?.addEventListener('click', () => {
+    const selected = components.find(c => c.id === selectedComponentId)
+    if (!selected) return
+    const wsComponents = components.filter(c => c.id.startsWith(selected.id.split('-component-')[0] + '-component-'))
+    const maxZ = Math.max(...wsComponents.map(c => c.zIndex || 0))
+    const updated = components.map(c => {
+      if (c.id === selectedComponentId) {
+        return { ...c, zIndex: maxZ + 1 }
+      }
+      return c
+    })
+    setComponents(updated)
+    renderUI()
+  })
+  
+  document.getElementById('btn-zindex-down')?.addEventListener('click', () => {
+    const selected = components.find(c => c.id === selectedComponentId)
+    if (!selected) return
+    const wsComponents = components.filter(c => c.id.startsWith(selected.id.split('-component-')[0] + '-component-'))
+    const minZ = Math.min(...wsComponents.map(c => c.zIndex || 0))
+    const updated = components.map(c => {
+      if (c.id === selectedComponentId) {
+        return { ...c, zIndex: Math.max(0, minZ - 1) }
+      }
+      return c
+    })
+    setComponents(updated)
+    renderUI()
+  })
+
+  document.getElementById('btn-zindex-top')?.addEventListener('click', () => {
+    const selected = components.find(c => c.id === selectedComponentId)
+    if (!selected) return
+    const wsComponents = components.filter(c => c.id.startsWith(selected.id.split('-component-')[0] + '-component-'))
+    const maxZ = Math.max(...wsComponents.map(c => c.zIndex || 0))
+    const updated = components.map(c => {
+      if (c.id === selectedComponentId) {
+        return { ...c, zIndex: maxZ + 1 }
+      }
+      return c
+    })
+    setComponents(updated)
+    renderUI()
+  })
+
+  document.getElementById('btn-zindex-bottom')?.addEventListener('click', () => {
+    const selected = components.find(c => c.id === selectedComponentId)
+    if (!selected) return
+    const wsComponents = components.filter(c => c.id.startsWith(selected.id.split('-component-')[0] + '-component-'))
+    const minZ = Math.min(...wsComponents.map(c => c.zIndex || 0))
+    const updated = components.map(c => {
+      if (c.id === selectedComponentId) {
+        return { ...c, zIndex: Math.max(0, minZ - 1) }
+      }
+      return c
+    })
+    setComponents(updated)
     renderUI()
   })
 }

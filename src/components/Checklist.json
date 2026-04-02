@@ -1,0 +1,12 @@
+{
+  "type": "checklist",
+  "name": "清单",
+  "icon": "📋",
+  "defaultWidth": 300,
+  "defaultHeight": 250,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

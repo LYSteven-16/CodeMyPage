@@ -10,6 +10,7 @@ interface EditorComponent {
   y: number
   width: number
   height: number
+  zIndex: number
   props: Record<string, any>
 }
 
@@ -61,7 +62,8 @@ function componentToMolecule(comp: EditorComponent): any {
   
   // 设置位置和尺寸
   molecule.id = comp.id
-  molecule.position = { x: comp.x, y: comp.y, z: 1 }
+  const originalZ = molecule.position?.z || 0
+  molecule.position = { x: comp.x, y: comp.y, z: originalZ + (comp.zIndex || 0) }
   molecule.width = comp.width || def.defaultWidth
   molecule.height = comp.height || def.defaultHeight
   
@@ -134,9 +136,28 @@ function componentToMolecule(comp: EditorComponent): any {
         atom.height = molecule.height
       }
       
-      // 圆角
-      if (atom.radius !== undefined && props.borderRadius !== undefined) {
-        atom.radius = props.borderRadius
+      // 视频原子
+      if (atom.capability === 'video') {
+        if (props.videoUrl !== undefined) {
+          atom.src = props.videoUrl
+        }
+        if (props.autoplay !== undefined) {
+          atom.autoplay = props.autoplay
+        }
+        if (props.loop !== undefined) {
+          atom.loop = props.loop
+        }
+        if (props.muted !== undefined) {
+          atom.muted = props.muted
+        }
+        if (props.controls !== undefined) {
+          atom.controls = props.controls
+        }
+        if (props.borderRadius !== undefined) {
+          atom.radius = props.borderRadius
+        }
+        atom.width = molecule.width
+        atom.height = molecule.height
       }
     })
   }
@@ -300,7 +321,7 @@ function renderMultipleWorkspaces(app: HTMLElement, components: EditorComponent[
   })))
 
   workspaces.forEach(workspace => {
-    const wsComponents = components.filter(c => c.id.startsWith(workspace.id + '-'))
+    const wsComponents = components.filter(c => c.id.startsWith(workspace.id + '-')).sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
     
     console.log('[Preview] Workspace:', workspace.id, '| Components in workspace:', wsComponents.length, '| Total components:', components.length)
     console.log('[Preview] Component IDs:', components.map(c => c.id).slice(0, 5))

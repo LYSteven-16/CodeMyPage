@@ -1,0 +1,44 @@
+{
+  "type": "video",
+  "name": "视频",
+  "icon": "🎬",
+  "defaultWidth": 480,
+  "defaultHeight": 300,
+  "propertiesPanel": {
+    "sections": [
+      {
+        "id": "video-section",
+        "controls": [
+          { "id": "videoUrl", "domId": "prop-video-url", "type": "text", "label": "视频地址", "placeholder": "输入视频 URL..." },
+          { "id": "autoplay", "domId": "prop-autoplay", "type": "checkbox", "label": "自动播放", "default": false },
+          { "id": "loop", "domId": "prop-loop", "type": "checkbox", "label": "循环播放", "default": false },
+          { "id": "muted", "domId": "prop-muted", "type": "checkbox", "label": "静音", "default": false },
+          { "id": "controls", "domId": "prop-controls", "type": "checkbox", "label": "显示控件", "default": true }
+        ]
+      },
+      {
+        "id": "border-section",
+        "controls": [
+          { "id": "borderRadius", "domId": "prop-radius", "type": "range", "label": "圆角", "min": 0, "max": 50, "default": 0, "showValue": true, "valueSuffix": "px" }
+        ]
+      }
+    ]
+  },
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": [
+      {
+        "id": "",
+        "capability": "video",
+        "src": "",
+        "radius": 0,
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "width": 400,
+        "height": 300
+      }
+    ],
+    "width": 480,
+    "height": 300
+  }
+}

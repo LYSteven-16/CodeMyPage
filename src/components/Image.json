@@ -1,0 +1,12 @@
+{
+  "type": "image",
+  "name": "图片",
+  "icon": "🖼️",
+  "defaultWidth": 300,
+  "defaultHeight": 200,
+  "molecule": {
+    "id": "",
+    "position": { "x": 0, "y": 0 },
+    "atoms": []
+  }
+}

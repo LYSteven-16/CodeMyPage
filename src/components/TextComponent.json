@@ -4,6 +4,43 @@
   "icon": "📝",
   "defaultWidth": 200,
   "defaultHeight": 60,
+  "propertiesPanel": {
+    "sections": [
+      {
+        "id": "text-section",
+        "controls": [
+          { "id": "text", "domId": "prop-text", "type": "text", "label": "文本内容", "placeholder": "输入文本..." },
+          { "id": "textX", "domId": "prop-text-x", "type": "number", "label": "文本 X", "default": 20, "layout": "half" },
+          { "id": "textY", "domId": "prop-text-y", "type": "number", "label": "文本 Y", "default": 20, "layout": "half" },
+          { "id": "fontSize", "domId": "prop-font-size", "type": "range", "label": "字号", "min": 10, "max": 72, "default": 16, "showValue": true, "valueSuffix": "px" },
+          { "id": "textColor", "domId": "prop-text-color", "type": "color", "label": "文字颜色", "default": "#1d1d1f", "showTextInput": true }
+        ]
+      },
+      {
+        "id": "background-section",
+        "controls": [
+          { "id": "backgroundColor", "domId": "prop-bg", "type": "color", "label": "背景颜色", "default": "#ffffff", "showTextInput": true }
+        ]
+      },
+      {
+        "id": "border-section",
+        "controls": [
+          { "id": "borderColor", "domId": "prop-border-color", "type": "color", "label": "边框颜色", "default": "#e5e5e5", "layout": "half", "compact": true },
+          { "id": "borderWidth", "domId": "prop-border-width", "type": "number", "label": "边框粗细", "default": 1, "layout": "half" },
+          { "id": "borderRadius", "domId": "prop-radius", "type": "range", "label": "圆角", "min": 0, "max": 100, "default": 0, "showValue": true, "valueSuffix": "px" }
+        ]
+      },
+      {
+        "id": "shadow-section",
+        "controls": [
+          { "id": "shadowEnabled", "domId": "prop-shadow", "type": "checkbox", "label": "启用阴影", "default": true, "sectionHeader": true },
+          { "id": "shadowBlur", "domId": "prop-shadow-blur", "type": "number", "label": "模糊", "default": 20, "layout": "half", "smallLabel": true },
+          { "id": "shadowSpread", "domId": "prop-shadow-spread", "type": "number", "label": "扩散", "default": 0, "layout": "half", "smallLabel": true },
+          { "id": "shadowColor", "domId": "prop-shadow-color", "type": "color", "label": "阴影颜色", "default": "rgba(0,0,0,0.1)", "compact": true }
+        ]
+      }
+    ]
+  },
   "molecule": {
     "id": "",
     "position": { "x": 0, "y": 0 },
